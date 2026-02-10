@@ -29,6 +29,18 @@ A geometry-only, touch-first prototype that proves the BURZEN core loop:
 
 APK artifacts are tracked in `builds/v0.00.1/` for release packaging.
 
+## Build release APK from source
+
+1. Install Godot 4 with Android export templates.
+2. Configure Android release keystore fields in `android/BurzenTD/export_presets.cfg`.
+3. Run:
+
+```bash
+./scripts/build_release_apk.sh
+```
+
+The release binary is exported to `builds/v0.00.1/BurzenTD_v0.00.1.apk`.
+
 ## Controls
 
 - **Tap (empty space):** place tower (up to max count)
