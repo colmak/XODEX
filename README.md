@@ -21,10 +21,10 @@ A geometry-only, touch-first prototype that proves the BURZEN core loop:
 - Not monetized
 - Not tutorialized with in-game explanatory text
 
-## Install APK
+## Android Install
 
 1. Download `BurzenTD_v0.00.1.apk` from GitHub Releases.
-2. Enable installation from unknown sources on your Android device.
+2. Enable "Install unknown apps" on your Android device.
 3. Install and launch in portrait orientation.
 
 APK artifacts are tracked in `builds/v0.00.1/` for release packaging.
@@ -36,10 +36,10 @@ APK artifacts are tracked in `builds/v0.00.1/` for release packaging.
 3. Run:
 
 ```bash
-./scripts/build_release_apk.sh
+./scripts/build_apk.sh
 ```
 
-The release binary is exported to `builds/v0.00.1/BurzenTD_v0.00.1.apk`.
+The release binary is exported to `builds/v0.00.1/BurzenTD_v0.00.1.apk` and SHA-256 is written to `builds/v0.00.1/checksum.txt`.
 
 ## Validate simulation + release checks
 
@@ -81,14 +81,19 @@ burzen-td-prototype/
 │   ├── vision.md
 │   ├── v0_scope.md
 │   ├── thermal_model.md
+│   ├── build_env.md
+│   ├── release_process.md
 │   └── roadmap.md
 ├── android/
 │   └── BurzenTD/
 ├── simulation/
 │   └── thermal_reference.py
 ├── scripts/
+│   ├── build_apk.sh
 │   ├── build_release_apk.sh
 │   └── run_tests.sh
 └── builds/
     └── v0.00.1/
+        ├── BurzenTD_v0.00.1.apk
+        └── checksum.txt
 ```

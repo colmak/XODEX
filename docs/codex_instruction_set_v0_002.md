@@ -23,7 +23,7 @@ This document is the authoritative engineering governance baseline for implement
 
 ## Examples
 - `./scripts/run_tests.sh` validates thermal behavior and release metadata checks before staging release work.
-- `./scripts/build_release_apk.sh --dry-run` validates configuration without requiring a local Godot install.
+- `./scripts/build_apk.sh --dry-run` validates configuration without requiring a local Godot install.
 
 ## Change log
 - **v0.002:** Initial repository codification of the provided CODEX instruction set.
