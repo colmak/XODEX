@@ -57,7 +57,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		active_touch_count = max(0, active_touch_count - 1)
 		var now := Time.get_ticks_msec() / 1000.0
 		var start = touch_down_time.get(event.index, now)
-		var hold_time := now - start
+		var hold_time: float = now - float(start)
 		touch_down_time.erase(event.index)
 
 		if two_finger_timer >= 0.0:
