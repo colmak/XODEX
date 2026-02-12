@@ -76,6 +76,12 @@ This runs thermal model regression checks and validates release export metadata 
 
 - WebSim module-level creator spec: `docs/websim_module_level_creator.md`
 
+## Contributor resources
+
+- Contribution workflow: `CONTRIBUTING.md`
+- Extension guide (towers/enemies/WASMUTABLE): `docs/extensibility_guide.md`
+- Engineering handoff plan: `docs/engineering_handoff_plan_v003.md`
+
 ## Roadmap
 
 - **v0.00.4:** richer environmental trigger tiles + corridor editor
