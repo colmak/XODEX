@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
+# GODOT 4.6.1 STRICT – SINGLETON ARCHITECTURE FIXED – v0.00.6.1
 extends Node
 
 const LEVEL_SCENE: String = "res://scenes/level_scene.tscn"
@@ -35,6 +35,8 @@ func _ready() -> void:
 	_load_demo_levels()
 	load_settings()
 	apply_audio_settings()
+	await get_tree().process_frame
+	SingletonGuard.assert_singleton_ready("HeatEngine", "LevelManager._ready")
 	_apply_heat_runtime_settings()
 
 func start_new_run() -> void:
