@@ -172,3 +172,21 @@ These references are included to encourage contributors to adopt familiar open-s
 - Signing keys (`*.jks`, `*.keystore`) must remain out of source control
 - APK/AAB artifacts under `builds/<version>/` remain ignored unless explicitly staged for release flow
 
+---
+
+## 10) First Launch Instructions – zero errors expected
+
+For the `v0.00.5.0` milestone, the Godot prototype scripts are now updated for strict typed parsing expectations.
+
+1. `git clone https://github.com/nesorox/XODEX.git`
+2. Open `android/BurzenTD/project.godot` in **Godot 4.6.1.stable**
+3. Keep **Treat warnings as errors** enabled
+4. Press **Play** (or reload project)
+
+Expected result: no parse errors and no Variant-inference warning output on first launch.
+
+Protein Phase 1 scaffolding is included in:
+- `android/BurzenTD/scripts/ResidueEngine.gd`
+- `android/BurzenTD/scripts/AffinityTable.gd`
+- `android/BurzenTD/scripts/TowerGraph.gd`
+- `android/BurzenTD/scripts/td_v0_00_4_mockup.gd` (typed integration + bond-renderer stub)
