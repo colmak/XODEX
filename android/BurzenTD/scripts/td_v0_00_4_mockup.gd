@@ -213,9 +213,9 @@ func _simulate_tower_damage(mobs: Array[Dictionary]) -> Dictionary:
 			if tower.is_empty():
 				continue
 			mean_heat_scale *= clamp(1.0 - heat * float(tower["heat_scale"]), MIN_HEAT_DAMAGE_SCALE, 1.0)
-		var armor_reduction := max(0.2, 1.0 - float(mob["armor"]) / 100.0)
-		var dealt := total_dps * mean_heat_scale * armor_reduction * float(current_terrain["damage_mult"])
-		var hp_left := max(0.0, float(mob["hp"]) - dealt)
+		var armor_reduction: float = maxf(0.2, 1.0 - float(mob["armor"]) / 100.0)
+		var dealt: float = total_dps * mean_heat_scale * armor_reduction * float(current_terrain["damage_mult"])
+		var hp_left: float = maxf(0.0, float(mob["hp"]) - dealt)
 		if hp_left == 0.0:
 			kills += 1
 		remaining_hp += hp_left

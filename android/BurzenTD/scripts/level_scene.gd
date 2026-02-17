@@ -183,15 +183,15 @@ func _update_towers(delta: float) -> void:
 		if bool(thermal["overheated"]):
 			continue
 
-		var target := _tower_target(t)
-		if target != null:
+		var target: Variant = _tower_target(t)
+		if target is Vector2:
 			t["last_target"] = target
 			thermal["heat"] += thermal["heat_per_shot"]
 			score += 1
 			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
 
-func _tower_target(tower: Dictionary):
+func _tower_target(tower: Dictionary) -> Variant:
 	for e in enemies:
 		if e["pos"].distance_to(tower["pos"]) <= tower["radius"]:
 			return e["pos"]
