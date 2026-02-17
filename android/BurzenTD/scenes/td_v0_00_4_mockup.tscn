@@ -50,7 +50,7 @@ theme_override_constants/separation = 24
 [node name="VersionLabel" type="Label" parent="TopBar/TopBarMargin/TopBarHBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "BURZEN TD v0.00.4.0 Prototype"
+text = "BURZEN TD v0.00.4.1 Prototype"
 
 [node name="WaveLabel" type="Label" parent="TopBar/TopBarMargin/TopBarHBox"]
 unique_name_in_owner = true
