@@ -49,6 +49,18 @@ Run the consolidated test gate:
 
 This runs thermal model regression checks and validates release export metadata via dry-run.
 
+## Run BURZEN v0.00.3.0 Haskell prototype
+
+An internal, deterministic SPOC/NESOROX/WASMUTABLE prototype is available at:
+
+- `simulation/haskell/BURZEN_v0_00_3_0.hs`
+
+Run it with:
+
+```bash
+runghc simulation/haskell/BURZEN_v0_00_3_0.hs
+```
+
 ## Controls
 
 ### Menu
