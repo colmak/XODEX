@@ -1,110 +1,174 @@
-# burzen-td-prototype
+# BURZEN Tower Defense Prototype (XODEX)
 
-Open-source Android prototype for **BURZEN Tower Defense v0.00.2**.
-Open-source Android prototype for **BURZEN Tower Defense v0.00.3.01**.
+Open-source Android + simulation prototype for **BURZEN TD**, currently tracked as:
 
-## What this is
+- **Runtime baseline:** `v0.00.3.0` (playable loop, procedural level routing, thermal tower mechanics)
+- **Design/scene expansion draft:** `v0.00.4.0` (mockup scene tree + UI wiring + expanded tower taxonomy scaffolding)
 
-A geometry-first, touch-first prototype that now includes a replayable shell around the BURZEN core loop:
+This repository intentionally keeps **prototype runtime stability** and **forward design experiments** side by side so contributors can iterate without blocking core gameplay.
 
-- Landing page / main menu entry flow
-- Procedural multi-level gameplay routing
-- Tap-based tower placement and thermal overheat behavior
-- Triangle enemies that follow generated paths
-- Wave/lives loop with win/lose state transitions
+---
 
-## What this is not
+## 1) Project Status and Versioning
 
-- Not a polished game
-- Not content complete
-- Not narrative-enabled
-- Not monetized
-- Not tutorialized with in-game explanatory text
+### Current stable gameplay layer (`v0.00.3.0`)
+Implemented in the primary Godot scenes/scripts and simulation modules:
 
-## Android Install
+- Touch-first placement loop
+- Thermal overheat/recovery tower state behavior
+- Procedural wave/path progression shell
+- Win/loss state transitions and menu flow
+- Deterministic simulation test coverage for baseline mechanics
 
-1. Download the latest APK from GitHub Releases.
-2. Enable "Install unknown apps" on your Android device.
-3. Install and launch in portrait orientation.
+### Forward prototype layer (`v0.00.4.0` draft)
+The repository includes a **Godot UI/scene mockup** for the planned expansion:
 
-APK artifacts are tracked under `builds/` for release packaging.
+- Expanded tower catalog UI (geometric + elemental + keystone classes)
+- Placement safety concept (NESOROX-style safe-state rollback checks)
+- Mock mob stats overlays and settings panel structure
+- Integration notes for future GDScript and optional GDNative/Haskell bridge
 
-## Build release APK from source
+> Important: `v0.00.4.0` assets are currently **prototype scaffolding**, not yet full gameplay parity with the stable `v0.00.3.0` runtime loop.
 
-1. Install Godot 4 with Android export templates.
-2. Configure Android release keystore fields in `android/BurzenTD/export_presets.cfg`.
-3. Run:
+### Versioning policy
+BURZEN TD uses incremental pre-1.0 semantics:
 
+- `v0.00.x.y` where:
+  - `x` = feature increment (prototype scope expansion)
+  - `y` = patch/prototype refinement
+- Stable gameplay claims are made only when reflected in both:
+  1. runtime scenes/scripts
+  2. automated simulation/regression checks
+
+---
+
+## 2) Implemented Capabilities (Today)
+
+### Gameplay/runtime capabilities
+- Main menu and level routing shell
+- Procedural path variants and level progression
+- Wave spawning and enemy traversal
+- Life tracking, score accumulation, retry/next/menu transitions
+- Tap placement, spacing/path safety constraints, long-press highlight behavior
+
+### Simulation capabilities
+- Thermal pressure and overheat state transitions
+- Basic wave scaling and mechanics checks
+- Deterministic checks suitable for CI-style gating
+
+### Expansion-ready capabilities
+- Additional tower taxonomy and metadata schema
+- UI container structure for collapsible tower/settings panels
+- Mock event points for safety-state projection and wave composition overlays
+
+---
+
+## 3) Architecture at a Glance
+
+- **Godot app root:** `android/BurzenTD/`
+- **Runtime scenes:** `android/BurzenTD/scenes/`
+- **Runtime scripts:** `android/BurzenTD/scripts/`
+- **Python simulation tests:** `simulation/`
+- **Prototype formal experiments (Haskell):** `simulation/haskell/`
+- **Product/engineering docs:** `docs/`
+
+Design principle: keep rendering/input logic in Godot while preserving deterministic mechanics models in simulation layers for rapid verification.
+
+---
+
+## 4) Build & Validation
+
+### Build Android APK
 ```bash
 ./scripts/build_apk.sh
 ```
 
-## Validate simulation + release checks
+Prerequisites:
+1. Godot 4 with Android export templates
+2. Android signing/export settings in `android/BurzenTD/export_presets.cfg`
 
-Run the consolidated test gate:
-
+### Run full local validation gate
 ```bash
 ./scripts/run_tests.sh
 ```
 
-This runs thermal model regression checks and validates release export metadata via dry-run.
+This executes simulation tests plus release metadata/export dry-run checks.
 
-## Run BURZEN v0.00.3.0 Haskell prototype
+---
 
-An internal, deterministic SPOC/NESOROX/WASMUTABLE prototype is available at:
-
-- `simulation/haskell/BURZEN_v0_00_3_0.hs`
-
-Run it with:
-
-```bash
-runghc simulation/haskell/BURZEN_v0_00_3_0.hs
-```
-
-## Controls
+## 5) Controls (Current Runtime)
 
 ### Menu
 - **Play:** starts a procedural run from Level 1
-- **Settings:** placeholder status text
+- **Settings:** placeholder/UI status behavior
 - **Quit:** exits app
 
 ### Gameplay
-- **Tap (empty space):** place tower (up to max count)
-- **Long-press tower:** heat highlight pulse
+- **Tap on empty space:** place tower (up to configured max)
+- **Long-press tower:** trigger heat highlight pulse
 - **Two-finger tap:** retry current level seed
 
-## Prototype features in v0.00.2
+---
 
-- Main menu as project entry scene (`MainMenu.tscn`)
-- Level manager singleton for run state/progression
-- Generated path variants (straight, zig-zag, S-curve, bends, stepped)
-- Wave counter, lives, score, and win/loss actions
-- Return-to-menu and next/retry flow
+## 6) Cross-Compatible Open-Source Implementation Notes
 
-## Design docs
+BURZEN TD is prototype-focused, but intentionally aligns with widely used open-source game/sim stacks for easier contributor portability.
 
-- WebSim module-level creator spec: `docs/websim_module_level_creator.md`
-- Protein Tower formal spec + pattern synthesis layer (`XODEX.PROTEIN_TOWER`, v0.00.3.0(N)): `docs/protein_tower_v0_00_3_0N.md`
-- BURZEN engine formalization (platform-invariant rendering monad): `docs/burzen_engine_formalization.md`
-- SPOC/NESOROX/WASMUTABLE moon mission integration architecture: `docs/moon_mission_spoc_nesorox_wasmutable_integration.md`
+### Engine and scripting compatibility
+- **Godot 4.x (MIT):** primary runtime and UI composition model
+  - SceneTree + signal architecture maps directly to BURZEN tower/mob/event hooks
+  - GDScript-first approach keeps iteration speed high for prototype balancing
+- **GDNative/GDExtension ecosystem:** supports extending hot paths in native languages
+  - BURZEN’s deterministic state hooks can be exported to native modules without rewriting scene layouts
 
-## Contributor resources
+### Deterministic simulation and balancing
+- **Python test ecosystem (CPython + unittest/pytest-compatible workflows):**
+  - Simple reproducible combat/thermal regressions
+  - Easy CI integration for balancing assertions
+- **Haskell prototype path (GHC/runghc):**
+  - Strong fit for pure-state transition experiments (SPOC/NESOROX-style modeling)
+  - Useful for proving candidate placement/wave policies before porting to GDScript
 
-- Contribution workflow: `CONTRIBUTING.md`
-- Extension guide (towers/enemies/WASMUTABLE): `docs/extensibility_guide.md`
+### Data-oriented compatibility approach
+BURZEN tower/mob specs are represented as serializable dictionary-like structures in prototype scripts. This makes migration straightforward to:
+
+- JSON/YAML balancing pipelines
+- ECS-style component models
+- External wave/tower tuning tools
+
+### Open-source projects/pattern families BURZEN can interoperate with
+(Reference families for implementation style; not direct bundled dependencies.)
+
+- **Godot demo/project patterns** for TD/pathing UI composition
+- **OpenRA-style deterministic RTS/TD simulation thinking** (state-first, deterministic outcomes)
+- **Mindustry-style data-driven unit/tower tuning workflows**
+- **Luanti/Minetest modding philosophy** for rapid gameplay extension through scriptable primitives
+
+These references are included to encourage contributors to adopt familiar open-source design heuristics while keeping BURZEN’s own architecture and naming stable.
+
+---
+
+## 7) Key Design & Engineering Documents
+
+- Extensibility guide: `docs/extensibility_guide.md`
 - Engineering handoff plan: `docs/engineering_handoff_plan_v003.md`
+- BURZEN engine formalization: `docs/burzen_engine_formalization.md`
+- Moon-mission SPOC/NESOROX/WASMUTABLE integration: `docs/moon_mission_spoc_nesorox_wasmutable_integration.md`
+- v0.00.4.0 scene tree/UI mockup notes: `docs/td_v0_00_4_scene_tree_and_ui_mockup.md`
 
-## Roadmap
+---
 
-- **v0.00.4:** richer environmental trigger tiles + corridor editor
-- **v0.01.0:** gem modifiers and tower specialization trees
+## 8) Roadmap Snapshot
 
-## Repository hygiene
+- **v0.00.4.x:** expanded tower classes + richer overlays + safer placement/state checks
+- **v0.00.5.x:** adaptive wave composition and stronger mob defense typing
+- **v0.01.0:** deeper WASMUTABLE-style rule shifts and specialization systems
 
-- Generated simulation logs should be written under `simulation/logs/` and are git-ignored by default (except optional marker files such as `.gitkeep`).
-- Local Android signing keys (`*.jks`, `*.keystore`) are intentionally ignored and must remain outside committed source.
-- Generated APK/AAB binaries under `builds/<version>/` are ignored unless explicitly staged for a release workflow.
+---
 
-- **v0.00.3:** vector flow visualization polish + improved route readability
-- **v0.00.4:** adaptive enemies
-- **v0.01.0:** WASMUTABLE rule shifts
+## 9) Repository Hygiene
+
+- Simulation logs go under `simulation/logs/` (ignored except marker files)
+- Signing keys (`*.jks`, `*.keystore`) must remain out of source control
+- APK/AAB artifacts under `builds/<version>/` remain ignored unless explicitly staged for release flow
+
