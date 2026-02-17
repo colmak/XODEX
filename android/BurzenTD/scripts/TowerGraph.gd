@@ -56,7 +56,10 @@ func _neighbors(left: Dictionary, right: Dictionary) -> bool:
 func _graph_stats() -> Dictionary:
 	var total: int = bonds.size()
 	if total == 0:
-		return {"total_bonds": 0, "avg_stability": 0.0, "misfold_risk": 0.0}
+		var idle_heat: float = 0.0
+		for tower: Dictionary in towers:
+			idle_heat += float(tower.get("normalized_heat", tower.get("thermal_state", 0.0)))
+		return {"total_bonds": 0, "avg_stability": 0.0, "misfold_risk": 0.0, "avg_domain_heat": idle_heat / maxf(float(towers.size()), 1.0)}
 	var stability_sum: float = 0.0
 	var negatives: int = 0
 	for bond: Dictionary in bonds:
@@ -64,8 +67,13 @@ func _graph_stats() -> Dictionary:
 		stability_sum += strength
 		if strength < 0.0:
 			negatives += 1
+	var total_heat: float = 0.0
+	for tower: Dictionary in towers:
+		total_heat += float(tower.get("normalized_heat", tower.get("thermal_state", 0.0)))
+	var avg_domain_heat: float = total_heat / maxf(float(towers.size()), 1.0)
 	return {
 		"total_bonds": total,
 		"avg_stability": stability_sum / float(total),
 		"misfold_risk": float(negatives) / float(total),
+		"avg_domain_heat": avg_domain_heat,
 	}

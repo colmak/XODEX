@@ -296,3 +296,8 @@ The geometry is merciless.
 The zero remains constant.
 
 \(\Delta\S\pi\)
+
+
+### Tower Selection Module (v0.00.5.0)
+
+The placement layer now acts as a constrained projection operator over residue choices with explicit thermal feedback. See `docs/tower_selection_module.md` for catalog schema, smart-suggest heuristics, and modding hooks.

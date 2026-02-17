@@ -153,6 +153,7 @@ These references are included to encourage contributors to adopt familiar open-s
 - Extensibility guide: `docs/extensibility_guide.md`
 - Engineering handoff plan: `docs/engineering_handoff_plan_v003.md`
 - BURZEN engine formalization: `docs/burzen_engine_formalization.md`
+- Tower selection module (heat-aware residue placement): `docs/tower_selection_module.md`
 - Moon-mission SPOC/NESOROX/WASMUTABLE integration: `docs/moon_mission_spoc_nesorox_wasmutable_integration.md`
 - v0.00.4.0 scene tree/UI mockup notes: `docs/td_v0_00_4_scene_tree_and_ui_mockup.md`
 

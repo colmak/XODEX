@@ -1,0 +1,23 @@
+{
+  "base_heat_generation": 0.8,
+  "heat_dissipation_rate": 0.35,
+  "overheat_threshold": {
+    "nonpolar": 65.0,
+    "polar_uncharged": 45.0,
+    "positively_charged": 58.0,
+    "negatively_charged": 56.0,
+    "special": 62.0
+  },
+  "thermal_sensitivity": 0.012,
+  "misfold_curve": {
+    "low": 0.05,
+    "medium": 0.25,
+    "high": 0.65
+  },
+  "global_heat_multiplier": 1.0,
+  "difficulty_scalars": {
+    "easy": 0.6,
+    "normal": 1.0,
+    "hard": 1.65
+  }
+}

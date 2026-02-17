@@ -48,9 +48,13 @@ var hud_enabled := true
 var show_range_overlay := true
 var show_attack_visualization := true
 var debug_logs_enabled := false
+var tower_selection_ui: TowerSelectionUI
 
 func _ready() -> void:
 	set_process(true)
+	tower_selection_ui = TowerSelectionUI.new()
+	add_child(tower_selection_ui)
+	tower_selection_ui.hide()
 	_apply_runtime_settings()
 	_load_level()
 	_update_hud()
@@ -175,7 +179,7 @@ func _point_along_path(progress: float) -> Vector2:
 func _update_towers(delta: float) -> void:
 	for t in towers:
 		t["last_target"] = null
-		var thermal = t["thermal"]
+		var thermal: Dictionary = t["thermal"]
 		thermal["heat"] = max(0.0, thermal["heat"] - thermal["dissipation_rate"] * delta)
 		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
 			thermal["overheated"] = false
@@ -190,6 +194,18 @@ func _update_towers(delta: float) -> void:
 			score += 1
 			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
+
+		var normalized_density: float = clampf(float(enemies.size()) / 20.0, 0.0, 2.0)
+		var heat_payload: Dictionary = HeatEngine.apply_tower_tick({
+			"residue_class": str(t["residue_class"]),
+			"heat_score": float(t.get("heat_score", 0.0)),
+			"is_misfolded": bool(t.get("is_misfolded", false)),
+		}, delta, normalized_density, target is Vector2)
+		t["heat_score"] = float(heat_payload.get("heat_score", 0.0))
+		t["normalized_heat"] = float(heat_payload.get("normalized_heat", 0.0))
+		t["thermal_state"] = float(heat_payload.get("thermal_state", 0.0))
+		t["misfold_probability"] = float(heat_payload.get("misfold_probability", 0.0))
+		t["is_misfolded"] = bool(heat_payload.get("is_misfolded", false))
 
 func _tower_target(tower: Dictionary) -> Variant:
 	for e in enemies:
@@ -247,6 +263,11 @@ func _place_tower(pos: Vector2) -> void:
 		"residue_class": _residue_for_index(towers.size()),
 		"highlight": 0.0,
 		"last_target": null,
+		"heat_score": 0.0,
+		"normalized_heat": 0.0,
+		"thermal_state": 0.0,
+		"misfold_probability": 0.0,
+		"is_misfolded": false,
 	})
 
 
@@ -358,7 +379,7 @@ func _draw() -> void:
 
 	for t in towers:
 		var thermal = t["thermal"]
-		var heat_ratio: float = clamp(thermal["heat"] / thermal["capacity"], 0.0, 1.0)
+		var heat_ratio: float = clampf(maxf(float(t.get("normalized_heat", 0.0)), float(thermal["heat"]) / float(thermal["capacity"])), 0.0, 1.0)
 		var c := Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
 		if thermal["overheated"]:
 			c = Color(1.0, 0.2, 0.1, 1.0)

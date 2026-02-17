@@ -70,3 +70,13 @@ Use a shape like:
 - Avoid hidden state that bypasses save/load and replay assumptions.
 - Keep Android performance in mind (avoid frame spikes in per-frame loops).
 - Update docs whenever extension points change.
+
+
+## Tower selection module (v0.00.5.0)
+
+Heat-aware placement now routes through `TowerSelectionUI` + `HeatEngine` contracts.
+
+- Add new residue cards in `android/BurzenTD/scripts/ui/TowerSelectionUI.gd` catalog payloads.
+- Keep heat fields (`heat_tolerance`, `heat_gen_rate`) explicit for WASMUTABLE patchability.
+- Update educational notes in `docs/tower_selection_module.md` when introducing new residue classes.
+- If extending live settings, map new values through `LevelManager.settings["heat"]` and forward to `HeatEngine.set_runtime_settings(...)`.
