@@ -181,20 +181,19 @@ func _update_towers(delta: float) -> void:
 		if thermal["overheated"]:
 			continue
 
-		var target: Vector2 = _tower_target(t)
-		if target != Vector2.INF:
+		var target := _tower_target(t)
+		if target != null:
 			t["last_target"] = target
 			thermal["heat"] += thermal["heat_per_shot"]
 			score += 1
 			if thermal["heat"] >= thermal["capacity"]:
 				thermal["overheated"] = true
 
-func _tower_target(tower: Dictionary) -> Vector2:
+func _tower_target(tower: Dictionary):
 	for e in enemies:
-		var enemy_pos: Vector2 = e["pos"]
-		if enemy_pos.distance_to(tower["pos"]) <= tower["radius"]:
-			return enemy_pos
-	return Vector2.INF
+		if e["pos"].distance_to(tower["pos"]) <= tower["radius"]:
+			return e["pos"]
+	return null
 
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
