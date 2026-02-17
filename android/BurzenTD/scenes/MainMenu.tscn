@@ -69,6 +69,221 @@ layout_mode = 2
 text = ""
 horizontal_alignment = 1
 
+[node name="SettingsPopup" type="PopupPanel" parent="."]
+unique_name_in_owner = true
+initial_position = 1
+size = Vector2i(560, 780)
+
+[node name="PopupMargin" type="MarginContainer" parent="SettingsPopup"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="PopupVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsTitle" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Runtime Settings"
+
+[node name="SettingsScroll" type="ScrollContainer" parent="SettingsPopup/PopupMargin/PopupVBox"]
+custom_minimum_size = Vector2(0, 600)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SectionsVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="GeneralSection" type="PanelContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox"]
+layout_mode = 2
+
+[node name="GeneralMargin" type="MarginContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="GeneralVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GeneralLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+layout_mode = 2
+text = "General Settings"
+
+[node name="VolumeLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Master Volume: 80%"
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.8
+
+[node name="GameSpeedLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Game Speed: 1.00x"
+
+[node name="GameSpeedSlider" type="HSlider" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.5
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="HudToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Show HUD"
+
+[node name="TowerSection" type="PanelContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox"]
+layout_mode = 2
+
+[node name="TowerMargin" type="MarginContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="TowerVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TowerLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox"]
+layout_mode = 2
+text = "Tower Settings"
+
+[node name="AttackVizToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Attack visualization"
+
+[node name="RangeOverlayToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Range overlay"
+
+[node name="KeystoneToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Keystone ability hooks"
+
+[node name="WaveSection" type="PanelContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox"]
+layout_mode = 2
+
+[node name="WaveMargin" type="MarginContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="WaveVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="WaveLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox"]
+layout_mode = 2
+text = "Wave Settings"
+
+[node name="SpawnRateLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spawn Rate: 1.00x"
+
+[node name="SpawnRateSlider" type="HSlider" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.5
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="DifficultyLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Difficulty: 1.00x"
+
+[node name="DifficultySlider" type="HSlider" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.6
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="AdvancedSection" type="PanelContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox"]
+layout_mode = 2
+
+[node name="AdvancedMargin" type="MarginContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="AdvancedVBox" type="VBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AdvancedLabel" type="Label" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox"]
+layout_mode = 2
+text = "Advanced Gameplay"
+
+[node name="DebugLogsToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable debug logs"
+
+[node name="SimulationModeToggle" type="CheckBox" parent="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Simulation mode"
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPopup/PopupMargin/PopupVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="Button" parent="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset Defaults"
+
+[node name="CloseButton" type="Button" parent="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 10
+text = "Close"
+
 [connection signal="pressed" from="Panel/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="Panel/SettingsButton" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="Panel/QuitButton" to="." method="_on_quit_pressed"]
+[connection signal="value_changed" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox/VolumeSlider" to="." method="_on_volume_changed"]
+[connection signal="value_changed" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox/GameSpeedSlider" to="." method="_on_game_speed_changed"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/GeneralSection/GeneralMargin/GeneralVBox/HudToggle" to="." method="_on_hud_toggled"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox/AttackVizToggle" to="." method="_on_attack_viz_toggled"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox/RangeOverlayToggle" to="." method="_on_range_overlay_toggled"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/TowerSection/TowerMargin/TowerVBox/KeystoneToggle" to="." method="_on_keystone_toggled"]
+[connection signal="value_changed" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox/SpawnRateSlider" to="." method="_on_spawn_rate_changed"]
+[connection signal="value_changed" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/WaveSection/WaveMargin/WaveVBox/DifficultySlider" to="." method="_on_difficulty_changed"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox/DebugLogsToggle" to="." method="_on_debug_logs_toggled"]
+[connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox/SimulationModeToggle" to="." method="_on_simulation_mode_toggled"]
+[connection signal="pressed" from="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox/ResetButton" to="." method="_on_reset_button_pressed"]
+[connection signal="pressed" from="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox/CloseButton" to="." method="_on_close_button_pressed"]
