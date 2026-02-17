@@ -16,6 +16,12 @@ extends Control
 @onready var difficulty_slider: HSlider = %DifficultySlider
 @onready var debug_logs_toggle: CheckBox = %DebugLogsToggle
 @onready var simulation_mode_toggle: CheckBox = %SimulationModeToggle
+@onready var heat_multiplier_slider = get_node_or_null("%HeatMultiplierSlider")
+@onready var heat_multiplier_label = get_node_or_null("%HeatMultiplierLabel")
+@onready var heat_tolerance_slider = get_node_or_null("%HeatToleranceSlider")
+@onready var cooling_efficiency_slider = get_node_or_null("%CoolingEfficiencySlider")
+@onready var visual_feedback_slider = get_node_or_null("%VisualHeatFeedbackSlider")
+@onready var educational_heat_toggle = get_node_or_null("%EducationalHeatToggle")
 
 func _ready() -> void:
 	version_label.text = "v0.00.3.0 runtime | v0.00.4.0 settings scaffold"
@@ -27,6 +33,7 @@ func _sync_ui_from_settings() -> void:
 	var tower: Dictionary = settings.get("tower", {})
 	var wave: Dictionary = settings.get("wave", {})
 	var advanced: Dictionary = settings.get("advanced", {})
+	var heat: Dictionary = settings.get("heat", {})
 
 	var volume: float = float(general.get("master_volume", 0.8))
 	var game_speed: float = float(general.get("game_speed", 1.0))
@@ -44,6 +51,16 @@ func _sync_ui_from_settings() -> void:
 	keystone_toggle.button_pressed = bool(tower.get("keystone_abilities", true))
 	debug_logs_toggle.button_pressed = bool(advanced.get("debug_logs", false))
 	simulation_mode_toggle.button_pressed = bool(advanced.get("simulation_mode", false))
+	if heat_multiplier_slider != null:
+		heat_multiplier_slider.value = float(heat.get("global_heat_multiplier", 1.0))
+	if heat_tolerance_slider != null:
+		heat_tolerance_slider.value = float(heat.get("tower_heat_tolerance_boost", 0.0))
+	if cooling_efficiency_slider != null:
+		cooling_efficiency_slider.value = float(heat.get("cooling_efficiency", 1.0))
+	if visual_feedback_slider != null:
+		visual_feedback_slider.value = float(heat.get("visual_heat_feedback_intensity", 1.0))
+	if educational_heat_toggle != null:
+		educational_heat_toggle.button_pressed = bool(heat.get("educational_heat_tooltips", true))
 
 	_update_slider_labels()
 
@@ -52,6 +69,8 @@ func _update_slider_labels() -> void:
 	game_speed_label.text = "Game Speed: %.2fx" % game_speed_slider.value
 	spawn_rate_label.text = "Spawn Rate: %.2fx" % spawn_rate_slider.value
 	difficulty_label.text = "Difficulty: %.2fx" % difficulty_slider.value
+	if heat_multiplier_label != null and heat_multiplier_slider != null:
+		heat_multiplier_label.text = "Global Heat Multiplier: %.2fx" % heat_multiplier_slider.value
 
 func _on_play_pressed() -> void:
 	LevelManager.start_new_run()
@@ -103,3 +122,19 @@ func _on_reset_button_pressed() -> void:
 
 func _on_close_button_pressed() -> void:
 	settings_popup.hide()
+
+func _on_heat_multiplier_changed(value: float) -> void:
+	LevelManager.update_settings("heat", "global_heat_multiplier", value)
+	_update_slider_labels()
+
+func _on_heat_tolerance_changed(value: float) -> void:
+	LevelManager.update_settings("heat", "tower_heat_tolerance_boost", value)
+
+func _on_cooling_efficiency_changed(value: float) -> void:
+	LevelManager.update_settings("heat", "cooling_efficiency", value)
+
+func _on_visual_heat_feedback_changed(value: float) -> void:
+	LevelManager.update_settings("heat", "visual_heat_feedback_intensity", value)
+
+func _on_educational_heat_toggled(button_pressed: bool) -> void:
+	LevelManager.update_settings("heat", "educational_heat_tooltips", button_pressed)

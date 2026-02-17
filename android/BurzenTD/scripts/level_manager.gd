@@ -3,6 +3,7 @@ extends Node
 const LEVEL_SCENE := "res://scenes/level_scene.tscn"
 const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
 const SETTINGS_FILE := "user://burzen_settings.cfg"
+const HEAT_CONFIG_PATH := "res://settings/heat_config.json"
 
 const DEFAULT_SETTINGS := {
 	"general": {
@@ -19,6 +20,14 @@ const DEFAULT_SETTINGS := {
 		"spawn_rate_multiplier": 1.0,
 		"difficulty_scale": 1.0,
 	},
+	"heat": {
+		"difficulty_preset": "normal",
+		"global_heat_multiplier": 1.0,
+		"tower_heat_tolerance_boost": 0.0,
+		"cooling_efficiency": 1.0,
+		"visual_heat_feedback_intensity": 1.0,
+		"educational_heat_tooltips": true,
+	},
 	"advanced": {
 		"debug_logs": false,
 		"simulation_mode": false,
@@ -31,8 +40,10 @@ var settings: Dictionary = {}
 
 func _ready() -> void:
 	settings = DEFAULT_SETTINGS.duplicate(true)
+	_load_heat_config_into_defaults()
 	load_settings()
 	apply_audio_settings()
+	_apply_heat_runtime_settings()
 
 func start_new_run() -> void:
 	level_index = 1
@@ -86,11 +97,13 @@ func update_settings(section: String, key: String, value) -> void:
 	section_data[key] = value
 	settings[section] = section_data
 	apply_audio_settings()
+	_apply_heat_runtime_settings()
 	save_settings()
 
 func reset_settings() -> void:
 	settings = DEFAULT_SETTINGS.duplicate(true)
 	apply_audio_settings()
+	_apply_heat_runtime_settings()
 	save_settings()
 
 func apply_audio_settings() -> void:
@@ -118,6 +131,31 @@ func load_settings() -> void:
 		for key in defaults.keys():
 			section_data[key] = cfg.get_value(section, key, defaults[key])
 		settings[section] = section_data
+	_apply_heat_runtime_settings()
+
+func _load_heat_config_into_defaults() -> void:
+	var file: FileAccess = FileAccess.open(HEAT_CONFIG_PATH, FileAccess.READ)
+	if file == null:
+		return
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	var heat_defaults: Dictionary = settings.get("heat", {})
+	heat_defaults["global_heat_multiplier"] = float(parsed.get("global_heat_multiplier", heat_defaults.get("global_heat_multiplier", 1.0)))
+	settings["heat"] = heat_defaults
+
+func _apply_heat_runtime_settings() -> void:
+	if HeatEngine == null:
+		return
+	var heat_settings: Dictionary = settings.get("heat", {})
+	HeatEngine.set_runtime_settings({
+		"difficulty": str(heat_settings.get("difficulty_preset", "normal")),
+		"global_heat_multiplier": float(heat_settings.get("global_heat_multiplier", 1.0)),
+		"tower_heat_tolerance_boost": float(heat_settings.get("tower_heat_tolerance_boost", 0.0)),
+		"cooling_efficiency": float(heat_settings.get("cooling_efficiency", 1.0)),
+		"visual_heat_feedback_intensity": float(heat_settings.get("visual_heat_feedback_intensity", 1.0)),
+		"educational_heat_tooltips": bool(heat_settings.get("educational_heat_tooltips", true)),
+	})
 
 func _load_level_scene() -> void:
 	get_tree().change_scene_to_file(LEVEL_SCENE)

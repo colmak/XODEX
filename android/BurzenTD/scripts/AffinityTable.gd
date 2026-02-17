@@ -60,6 +60,9 @@ func evaluate_pair(left: Dictionary, right: Dictionary, diagonal: bool = false) 
 	var distance_mod: float = maxf(0.0, 1.0 - max(0, manhattan - 1) * distance_falloff)
 	var orientation_mod: float = 1.0 + orientation_gain if diagonal and dx == 1 and dy == 1 else 1.0
 	var score: float = base * thermal_mod * distance_mod * orientation_mod
+	var left_heat: float = float(left.get("normalized_heat", thermal_left))
+	var right_heat: float = float(right.get("normalized_heat", thermal_right))
+	score = HeatEngine.bond_strength(score, left_heat, right_heat)
 	return {
 		"strength": score,
 		"affinity_type": "attractive" if score > 0.0 else "repulsive" if score < 0.0 else "neutral",
