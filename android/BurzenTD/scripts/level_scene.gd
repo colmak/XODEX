@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
+# GODOT 4.6.1 STRICT – SINGLETON ARCHITECTURE FIXED – v0.00.6.1
 extends Node2D
 
 const MAX_TOWERS: int = 12
@@ -60,6 +60,9 @@ func _ready() -> void:
 	tower_selection_ui = TowerSelectionUI.new()
 	add_child(tower_selection_ui)
 	tower_selection_ui.hide()
+	await get_tree().process_frame
+	SingletonGuard.assert_singleton_ready("TutorialManager", "LevelScene._ready")
+	SingletonGuard.assert_singleton_ready("HeatEngine", "LevelScene._ready")
 	_apply_runtime_settings()
 	_load_level()
 	_update_hud()

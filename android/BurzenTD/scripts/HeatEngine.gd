@@ -1,7 +1,5 @@
-# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
+# GODOT 4.6.1 STRICT – SINGLETON ARCHITECTURE FIXED – v0.00.6.1
 extends Node
-
-class_name HeatEngine
 
 const CONFIG_PATH: String = "res://settings/heat_config.json"
 

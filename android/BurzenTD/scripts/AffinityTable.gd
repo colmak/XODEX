@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT TYPING – CLEAN FIRST LAUNCH
+# GODOT 4.6.1 STRICT – SINGLETON ARCHITECTURE FIXED – v0.00.6.1
 extends RefCounted
 
 class_name AffinityTable
