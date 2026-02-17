@@ -28,8 +28,8 @@ Tracks milestone progression from prototype baseline into a replayable shell and
 - Success criteria: enemy route choices change in response to tower placement pressure.
 
 ### v0.01.0
-- Scope: WASMUTABLE rule shifts (mid-run parameter mutation).
-- Success criteria: rule-engine parameter mutation is safe, deterministic, and documented.
+- Scope: Player-authored WASMUTABLE overlays (safe mid-run parameter mutation).
+- Success criteria: mutation interfaces are deterministic, bounded, and exportable to map config.
 
 ## Change log
 - **v0.003:** Added replayable-shell milestone details for v0.00.2 and shifted downstream milestones.

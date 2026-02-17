@@ -1,6 +1,7 @@
 # burzen-td-prototype
 
 Open-source Android prototype for **BURZEN Tower Defense v0.00.2**.
+Open-source Android prototype for **BURZEN Tower Defense v0.00.3.01**.
 
 ## What this is
 
@@ -68,7 +69,7 @@ This runs thermal model regression checks and validates release export metadata 
 - Wave counter, lives, score, and win/loss actions
 - Return-to-menu and next/retry flow
 
-## Roadmap
+## Design docs
 
 - **v0.00.3:** vector flow visualization polish + improved route readability
 - **v0.00.4:** adaptive enemies
