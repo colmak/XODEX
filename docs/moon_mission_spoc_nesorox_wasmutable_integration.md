@@ -115,6 +115,7 @@ Treat external physics engines as authoritative signal sources but still subject
 - `simulation/wasmutable/`: wasm loaders and host bindings.
 - `simulation/logs/`: run output artifacts (optional `.gitkeep`, typically ignored in VCS).
 - `scripts/run_moon_scenario.sh`: reproducible scenario entry point.
+- `.gitignore`: enforce exclusion of generated simulation logs/binaries and local keystore material.
 
 ## Initial milestones
 1. Build minimal state vector + transition loop in `simulation/`.

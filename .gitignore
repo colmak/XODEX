@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS/editor noise
+.DS_Store
+*.swp
+
+# Godot local import/cache data
+.godot/
+android/BurzenTD/.godot/
+
+# Local signing material (must stay out of VCS)
+*.jks
+*.keystore
+android/BurzenTD/*.keystore
+
+# Generated simulation run artifacts
+simulation/logs/*.json
+simulation/logs/*.ndjson
+!simulation/logs/.gitkeep
+
+# Generated build outputs (keep release docs/checksums tracked)
+builds/*/*.apk
+builds/*/*.aab
