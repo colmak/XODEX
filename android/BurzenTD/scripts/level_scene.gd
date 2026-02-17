@@ -31,22 +31,22 @@ var two_finger_timer: float = -1.0
 var game_state: String = "running"
 var path_points: PackedVector2Array = PackedVector2Array()
 var path_lengths: Array[float] = []
-var total_path_length: float = 0.0
+var total_path_length := 0.0
 
-var wave_index: int = 1
-var wave_count: int = 3
-var enemies_per_wave: int = 6
-var enemies_spawned_in_wave: int = 0
-var enemy_speed: float = 120.0
-var enemy_spawn_interval: float = ENEMY_SPAWN_INTERVAL
-var lives: int = 3
-var score: int = 0
+var wave_index := 1
+var wave_count := 3
+var enemies_per_wave := 6
+var enemies_spawned_in_wave := 0
+var enemy_speed := 120.0
+var enemy_spawn_interval := ENEMY_SPAWN_INTERVAL
+var lives := 3
+var score := 0
 
-var game_speed: float = 1.0
-var hud_enabled: bool = true
-var show_range_overlay: bool = true
-var show_attack_visualization: bool = true
-var debug_logs_enabled: bool = false
+var game_speed := 1.0
+var hud_enabled := true
+var show_range_overlay := true
+var show_attack_visualization := true
+var debug_logs_enabled := false
 
 func _ready() -> void:
 	set_process(true)
@@ -55,7 +55,7 @@ func _ready() -> void:
 	_update_hud()
 
 func _process(delta: float) -> void:
-	var scaled_delta: float = delta * game_speed
+	var scaled_delta := delta * game_speed
 	if two_finger_timer >= 0.0:
 		two_finger_timer -= scaled_delta
 		if two_finger_timer < 0.0:
@@ -79,9 +79,9 @@ func _input(event: InputEvent) -> void:
 func _load_level() -> void:
 	var config: Dictionary = LevelManager.get_level_config()
 	path_points = config.get("path_points", PackedVector2Array([Vector2(40, 640), Vector2(680, 640)]))
-	wave_count = int(config.get("wave_count", 3))
-	enemies_per_wave = int(config.get("enemies_per_wave", 6))
-	enemy_speed = float(config.get("enemy_speed", 120.0))
+	wave_count = config.get("wave_count", 3)
+	enemies_per_wave = config.get("enemies_per_wave", 6)
+	enemy_speed = config.get("enemy_speed", 120.0)
 	_apply_runtime_settings()
 	wave_index = 1
 	enemies_spawned_in_wave = 0
@@ -104,6 +104,7 @@ func _build_path_cache() -> void:
 		var segment_length: float = path_points[i].distance_to(path_points[i + 1])
 		path_lengths.append(segment_length)
 		total_path_length += segment_length
+
 
 func _apply_runtime_settings() -> void:
 	var settings: Dictionary = LevelManager.get_settings()
@@ -170,30 +171,29 @@ func _point_along_path(progress: float) -> Vector2:
 	return path_points[path_points.size() - 1]
 
 func _update_towers(delta: float) -> void:
-	for tower_data: Dictionary in towers:
-		tower_data["last_target"] = null
-		var thermal: Dictionary = tower_data["thermal"]
-		thermal["heat"] = maxf(0.0, float(thermal["heat"]) - float(thermal["dissipation_rate"]) * delta)
-		if bool(thermal["overheated"]) and float(thermal["heat"]) <= float(thermal["capacity"]) * float(thermal["recovery_ratio"]):
+	for t in towers:
+		t["last_target"] = null
+		var thermal = t["thermal"]
+		thermal["heat"] = max(0.0, thermal["heat"] - thermal["dissipation_rate"] * delta)
+		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
 			thermal["overheated"] = false
 
 		if bool(thermal["overheated"]):
 			continue
 
-		var target_position: Vector2 = _tower_target(tower_data)
-		if target_position != Vector2.INF:
-			tower_data["last_target"] = target_position
-			thermal["heat"] = float(thermal["heat"]) + float(thermal["heat_per_shot"])
+		var target := _tower_target(t)
+		if target != null:
+			t["last_target"] = target
+			thermal["heat"] += thermal["heat_per_shot"]
 			score += 1
 			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
 
-func _tower_target(tower: Dictionary) -> Vector2:
-	for enemy_data: Dictionary in enemies:
-		var enemy_pos: Vector2 = enemy_data["pos"]
-		if enemy_pos.distance_to(tower["pos"]) <= float(tower["radius"]):
-			return enemy_pos
-	return Vector2.INF
+func _tower_target(tower: Dictionary):
+	for e in enemies:
+		if e["pos"].distance_to(tower["pos"]) <= tower["radius"]:
+			return e["pos"]
+	return null
 
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
@@ -309,20 +309,18 @@ func _draw() -> void:
 			p + Vector2(-13, 11),
 		], [Color("f8fafc")])
 
-	for tower_data: Dictionary in towers:
-		var thermal: Dictionary = tower_data["thermal"]
-		var heat_ratio: float = clampf(float(thermal["heat"]) / float(thermal["capacity"]), 0.0, 1.0)
-		var tower_color: Color = Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
-		if bool(thermal["overheated"]):
-			tower_color = Color(1.0, 0.2, 0.1, 1.0)
-		var tower_pos: Vector2 = tower_data["pos"]
-		draw_circle(tower_pos, 28.0, tower_color)
+	for t in towers:
+		var thermal = t["thermal"]
+		var heat_ratio: float = clamp(thermal["heat"] / thermal["capacity"], 0.0, 1.0)
+		var c := Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
+		if thermal["overheated"]:
+			c = Color(1.0, 0.2, 0.1, 1.0)
+		draw_circle(t["pos"], 28.0, c)
 		if show_range_overlay:
-			draw_arc(tower_pos, float(tower_data["radius"]), 0.0, TAU, 48, Color(0.5, 0.5, 0.6, 0.2), 2.0)
-		var last_target: Variant = tower_data["last_target"]
-		if show_attack_visualization and last_target != null:
-			draw_line(tower_pos, Vector2(last_target), Color(1.0, 0.4, 0.3, 0.6), 3.0)
+			draw_arc(t["pos"], t["radius"], 0.0, TAU, 48, Color(0.5, 0.5, 0.6, 0.2), 2.0)
+		if show_attack_visualization and t["last_target"] != null:
+			draw_line(t["pos"], t["last_target"], Color(1.0, 0.4, 0.3, 0.6), 3.0)
 
-		if float(tower_data["highlight"]) > 0.0:
-			draw_circle(tower_pos, 38.0, Color(1, 1, 1, 0.2))
-			tower_data["highlight"] = maxf(0.0, float(tower_data["highlight"]) - 0.04)
+		if t["highlight"] > 0.0:
+			draw_circle(t["pos"], 38.0, Color(1, 1, 1, 0.2))
+			t["highlight"] = max(0.0, t["highlight"] - 0.04)
