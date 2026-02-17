@@ -1,5 +1,6 @@
 # burzen-td-prototype
 
+Open-source Android prototype for **BURZEN Tower Defense v0.00.2**.
 Open-source Android prototype for **BURZEN Tower Defense v0.00.3.01**.
 
 ## What this is
@@ -51,8 +52,7 @@ This runs thermal model regression checks and validates release export metadata 
 ## Controls
 
 ### Menu
-- **Play:** starts a seeded procedural run from Level 0 and advances through Level 1000 before cycling
-- **Seed field:** enter text or a number to generate a deterministic, shareable run
+- **Play:** starts a procedural run from Level 1
 - **Settings:** placeholder status text
 - **Quit:** exits app
 
@@ -61,16 +61,13 @@ This runs thermal model regression checks and validates release export metadata 
 - **Long-press tower:** heat highlight pulse
 - **Two-finger tap:** retry current level seed
 
-## Prototype features in v0.00.3.01
+## Prototype features in v0.00.2
 
 - Main menu as project entry scene (`MainMenu.tscn`)
-- Seed-driven level generation with fixed tower nodes
-- Wave definitions scaled to 100–500 creeps and incremental batch spawning
-- Creep classes (`runner`, `swarm`, `tank`) with HP/speed variance
-- Tower thermal damage model (`base × role × upgrade × heat`)
-- WASMUTABLE mid-wave event mutations (cost inversion, overheat spike, spawn drift)
-- Runtime single-player progression persistence (waves cleared, tower upgrade points, seed history)
-- Overlay cycling for thermal/vector/WASMUTABLE inspection
+- Level manager singleton for run state/progression
+- Generated path variants (straight, zig-zag, S-curve, bends, stepped)
+- Wave counter, lives, score, and win/loss actions
+- Return-to-menu and next/retry flow
 
 ## Design docs
 
@@ -96,3 +93,6 @@ This runs thermal model regression checks and validates release export metadata 
 - Local Android signing keys (`*.jks`, `*.keystore`) are intentionally ignored and must remain outside committed source.
 - Generated APK/AAB binaries under `builds/<version>/` are ignored unless explicitly staged for a release workflow.
 
+- **v0.00.3:** vector flow visualization polish + improved route readability
+- **v0.00.4:** adaptive enemies
+- **v0.01.0:** WASMUTABLE rule shifts
