@@ -1,3 +1,4 @@
+# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
 extends Control
 
 @onready var version_label: Label = %VersionLabel
@@ -24,7 +25,7 @@ extends Control
 @onready var educational_heat_toggle = get_node_or_null("%EducationalHeatToggle")
 
 func _ready() -> void:
-	version_label.text = "v0.00.3.0 runtime | v0.00.4.0 settings scaffold"
+	version_label.text = "v0.00.6.0 demo campaign"
 	_sync_ui_from_settings()
 
 func _sync_ui_from_settings() -> void:
@@ -73,7 +74,7 @@ func _update_slider_labels() -> void:
 		heat_multiplier_label.text = "Global Heat Multiplier: %.2fx" % heat_multiplier_slider.value
 
 func _on_play_pressed() -> void:
-	LevelManager.start_new_run()
+	LevelManager.show_campaign_select()
 
 func _on_settings_pressed() -> void:
 	_sync_ui_from_settings()

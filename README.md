@@ -191,3 +191,13 @@ Protein Phase 1 scaffolding is included in:
 - `android/BurzenTD/scripts/AffinityTable.gd`
 - `android/BurzenTD/scripts/TowerGraph.gd`
 - `android/BurzenTD/scripts/td_v0_00_4_mockup.gd` (typed integration + bond-renderer stub)
+
+## 11) Play the Demo Campaign in 2 clicks
+
+1. Open `android/BurzenTD/project.godot` in Godot 4.6.1.
+2. Press **Play** then tap **Demo Campaign** and choose any of the five tutorial levels.
+
+Campaign assets:
+- Level-select UI: `android/BurzenTD/ui/campaign_select.tscn`
+- Demo levels: `android/BurzenTD/levels/demo/`
+- Tower definitions: `android/BurzenTD/data/towers/tower_definitions.json`

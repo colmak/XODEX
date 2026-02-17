@@ -1,6 +1,7 @@
+# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
 extends Node2D
 
-const MAX_TOWERS: int = 7
+const MAX_TOWERS: int = 12
 const ENEMY_SPAWN_INTERVAL: float = 0.8
 const LONG_PRESS_SECONDS: float = 0.4
 const TWO_FINGER_WINDOW: float = 0.18
@@ -32,22 +33,26 @@ var two_finger_timer: float = -1.0
 var game_state: String = "running"
 var path_points: PackedVector2Array = PackedVector2Array()
 var path_lengths: Array[float] = []
-var total_path_length := 0.0
+var total_path_length: float = 0.0
 
-var wave_index := 1
-var wave_count := 3
-var enemies_per_wave := 6
-var enemies_spawned_in_wave := 0
-var enemy_speed := 120.0
-var enemy_spawn_interval := ENEMY_SPAWN_INTERVAL
-var lives := 3
-var score := 0
+var wave_index: int = 1
+var wave_count: int = 3
+var enemies_per_wave: int = 6
+var enemies_spawned_in_wave: int = 0
+var enemy_speed: float = 120.0
+var enemy_spawn_interval: float = ENEMY_SPAWN_INTERVAL
+var lives: int = 3
+var score: int = 0
+var free_energy_threshold: float = 0.6
+var minimum_bonds: int = 2
+var level_id: String = ""
+var unlocked_towers: Array[String] = []
 
-var game_speed := 1.0
-var hud_enabled := true
-var show_range_overlay := true
-var show_attack_visualization := true
-var debug_logs_enabled := false
+var game_speed: float = 1.0
+var hud_enabled: bool = true
+var show_range_overlay: bool = true
+var show_attack_visualization: bool = true
+var debug_logs_enabled: bool = false
 var tower_selection_ui: TowerSelectionUI
 
 func _ready() -> void:
@@ -60,16 +65,14 @@ func _ready() -> void:
 	_update_hud()
 
 func _process(delta: float) -> void:
-	var scaled_delta := delta * game_speed
+	var scaled_delta: float = delta * game_speed
 	if two_finger_timer >= 0.0:
 		two_finger_timer -= scaled_delta
 		if two_finger_timer < 0.0:
 			two_finger_timer = -1.0
-
 	if game_state != "running":
 		queue_redraw()
 		return
-
 	_handle_spawning(scaled_delta)
 	_update_enemies(scaled_delta)
 	_update_towers(scaled_delta)
@@ -85,9 +88,19 @@ func _input(event: InputEvent) -> void:
 func _load_level() -> void:
 	var config: Dictionary = LevelManager.get_level_config()
 	path_points = config.get("path_points", PackedVector2Array([Vector2(40, 640), Vector2(680, 640)]))
-	wave_count = config.get("wave_count", 3)
-	enemies_per_wave = config.get("enemies_per_wave", 6)
-	enemy_speed = config.get("enemy_speed", 120.0)
+	wave_count = int(config.get("wave_count", 3))
+	enemies_per_wave = int(config.get("enemies_per_wave", 6))
+	enemy_speed = float(config.get("enemy_speed", 120.0))
+	free_energy_threshold = float(config.get("free_energy_threshold", 0.6))
+	minimum_bonds = int(config.get("minimum_bonds", 2))
+	level_id = str(config.get("level_id", "procedural"))
+	unlocked_towers.clear()
+	for t: Variant in config.get("unlocked_towers", []):
+		unlocked_towers.append(str(t))
+	var tutorial_steps: Array[String] = []
+	for step: Variant in config.get("tutorial_steps", []):
+		tutorial_steps.append(str(step))
+	TutorialManager.begin_level(level_id, tutorial_steps)
 	_apply_runtime_settings()
 	wave_index = 1
 	enemies_spawned_in_wave = 0
@@ -96,12 +109,10 @@ func _load_level() -> void:
 	game_state = "running"
 	lives = 3
 	score = 0
-	status_label.text = "Tap to place towers. Hold on tower to pulse heat ring."
-	if not show_attack_visualization:
-		status_label.text += " Attack rays disabled in settings."
+	status_label.text = TutorialManager.current_step_text()
 	action_button.visible = false
 	_build_path_cache()
-	level_label.text = "Level %d  | Seed %d" % [int(config.get("level_index", 1)), int(config.get("seed", 0))]
+	level_label.text = "Level %d | %s" % [int(config.get("level_index", 1)), level_id]
 
 func _build_path_cache() -> void:
 	path_lengths.clear()
@@ -110,7 +121,6 @@ func _build_path_cache() -> void:
 		var segment_length: float = path_points[i].distance_to(path_points[i + 1])
 		path_lengths.append(segment_length)
 		total_path_length += segment_length
-
 
 func _apply_runtime_settings() -> void:
 	var settings: Dictionary = LevelManager.get_settings()
@@ -131,7 +141,6 @@ func _handle_spawning(delta: float) -> void:
 	spawn_timer -= delta
 	if spawn_timer > 0.0:
 		return
-
 	if enemies_spawned_in_wave < enemies_per_wave:
 		_spawn_enemy()
 		enemies_spawned_in_wave += 1
@@ -142,22 +151,17 @@ func _handle_spawning(delta: float) -> void:
 		spawn_timer = 1.0
 
 func _spawn_enemy() -> void:
-	enemies.append({
-		"progress": 0.0,
-		"pos": path_points[0],
-	})
+	enemies.append({"progress": 0.0, "pos": path_points[0]})
 
 func _update_enemies(delta: float) -> void:
 	var reached_end: int = 0
 	for enemy: Dictionary in enemies:
 		enemy["progress"] = float(enemy["progress"]) + enemy_speed * delta
 		enemy["pos"] = _point_along_path(float(enemy["progress"]))
-	if enemies.any(func(e: Dictionary) -> bool: return float(e["progress"]) >= total_path_length):
-		for enemy_data: Dictionary in enemies:
-			if float(enemy_data["progress"]) >= total_path_length:
-				reached_end += 1
-		enemies = enemies.filter(func(e: Dictionary) -> bool: return float(e["progress"]) < total_path_length)
-
+	for enemy_data: Dictionary in enemies:
+		if float(enemy_data["progress"]) >= total_path_length:
+			reached_end += 1
+	enemies = enemies.filter(func(e: Dictionary) -> bool: return float(e["progress"]) < total_path_length)
 	if reached_end > 0:
 		lives -= reached_end
 		if lives <= 0:
@@ -177,39 +181,29 @@ func _point_along_path(progress: float) -> Vector2:
 	return path_points[path_points.size() - 1]
 
 func _update_towers(delta: float) -> void:
-	for t in towers:
+	for t: Dictionary in towers:
 		t["last_target"] = null
 		var thermal: Dictionary = t["thermal"]
-		thermal["heat"] = max(0.0, thermal["heat"] - thermal["dissipation_rate"] * delta)
-		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
+		thermal["heat"] = maxf(0.0, float(thermal["heat"]) - float(thermal["dissipation_rate"]) * delta)
+		if bool(thermal["overheated"]) and float(thermal["heat"]) <= float(thermal["capacity"]) * float(thermal["recovery_ratio"]):
 			thermal["overheated"] = false
-
 		if bool(thermal["overheated"]):
 			continue
-
 		var target: Variant = _tower_target(t)
 		if target is Vector2:
 			t["last_target"] = target
-			thermal["heat"] += thermal["heat_per_shot"]
+			thermal["heat"] = float(thermal["heat"]) + float(thermal["heat_per_shot"])
 			score += 1
 			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
-
 		var normalized_density: float = clampf(float(enemies.size()) / 20.0, 0.0, 2.0)
-		var heat_payload: Dictionary = HeatEngine.apply_tower_tick({
-			"residue_class": str(t["residue_class"]),
-			"heat_score": float(t.get("heat_score", 0.0)),
-			"is_misfolded": bool(t.get("is_misfolded", false)),
-		}, delta, normalized_density, target is Vector2)
-		t["heat_score"] = float(heat_payload.get("heat_score", 0.0))
-		t["normalized_heat"] = float(heat_payload.get("normalized_heat", 0.0))
-		t["thermal_state"] = float(heat_payload.get("thermal_state", 0.0))
-		t["misfold_probability"] = float(heat_payload.get("misfold_probability", 0.0))
-		t["is_misfolded"] = bool(heat_payload.get("is_misfolded", false))
+		var heat_payload: Dictionary = HeatEngine.apply_tower_tick(t, delta, normalized_density, target is Vector2)
+		for key: Variant in heat_payload.keys():
+			t[str(key)] = heat_payload[key]
 
 func _tower_target(tower: Dictionary) -> Variant:
-	for e in enemies:
-		if e["pos"].distance_to(tower["pos"]) <= tower["radius"]:
+	for e: Dictionary in enemies:
+		if Vector2(e["pos"]).distance_to(Vector2(tower["pos"])) <= float(tower["radius"]):
 			return e["pos"]
 	return null
 
@@ -219,24 +213,21 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		touch_down_time[event.index] = Time.get_ticks_msec() / 1000.0
 		if active_touch_count >= 2:
 			two_finger_timer = TWO_FINGER_WINDOW
+		return
+	active_touch_count = max(0, active_touch_count - 1)
+	var now: float = Time.get_ticks_msec() / 1000.0
+	var start: float = float(touch_down_time.get(event.index, now))
+	var hold_time: float = now - start
+	touch_down_time.erase(event.index)
+	if two_finger_timer >= 0.0:
+		_restart_level()
+		return
+	if game_state != "running":
+		return
+	if hold_time >= LONG_PRESS_SECONDS:
+		_highlight_tower(event.position)
 	else:
-		active_touch_count = max(0, active_touch_count - 1)
-		var now: float = Time.get_ticks_msec() / 1000.0
-		var start: float = float(touch_down_time.get(event.index, now))
-		var hold_time: float = now - start
-		touch_down_time.erase(event.index)
-
-		if two_finger_timer >= 0.0:
-			_restart_level()
-			return
-
-		if game_state != "running":
-			return
-
-		if hold_time >= LONG_PRESS_SECONDS:
-			_highlight_tower(event.position)
-		else:
-			_place_tower(event.position)
+		_place_tower(event.position)
 
 func _place_tower(pos: Vector2) -> void:
 	if towers.size() >= MAX_TOWERS:
@@ -245,14 +236,10 @@ func _place_tower(pos: Vector2) -> void:
 		if Vector2(tower_data["pos"]).distance_to(pos) < 80.0:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
-		status_label.text = "Too close to path. Place tower on open lane."
-		if debug_logs_enabled:
-			print("[settings/debug] placement rejected near path:", pos)
+		status_label.text = "Too close to river pathway."
 		return
-
+	var next_tower_def: Dictionary = _next_tower_definition()
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
-	thermal["heat"] = 0.0
-	thermal["overheated"] = false
 	towers.append({
 		"id": towers.size() + 1,
 		"pos": pos,
@@ -260,7 +247,6 @@ func _place_tower(pos: Vector2) -> void:
 		"grid_y": int(round(pos.y / 80.0)),
 		"radius": 180.0,
 		"thermal": thermal,
-		"residue_class": _residue_for_index(towers.size()),
 		"highlight": 0.0,
 		"last_target": null,
 		"heat_score": 0.0,
@@ -268,51 +254,31 @@ func _place_tower(pos: Vector2) -> void:
 		"thermal_state": 0.0,
 		"misfold_probability": 0.0,
 		"is_misfolded": false,
-	})
+	}.merged(next_tower_def, true))
+	TutorialManager.advance_step()
+	var step_text: String = TutorialManager.current_step_text()
+	if not step_text.is_empty():
+		status_label.text = step_text
 
-
-func _residue_for_index(index: int) -> String:
-	var mapping: Array[String] = ["nonpolar", "polar_uncharged", "positively_charged", "negatively_charged", "special"]
-	return mapping[index % mapping.size()]
+func _next_tower_definition() -> Dictionary:
+	var catalog: Array[Dictionary] = tower_selection_ui.visible_catalog(0.0, unlocked_towers)
+	if catalog.is_empty():
+		catalog = tower_selection_ui.catalog
+	if catalog.is_empty():
+		return {"tower_id": "fallback", "residue_class": "special", "heat_gen_rate": 0.5, "heat_tolerance_value": 1.0}
+	return catalog[towers.size() % catalog.size()]
 
 func _refresh_tower_bonds() -> void:
-	tower_bonds.clear()
-	for i in range(towers.size()):
-		for j in range(i + 1, towers.size()):
-			var left: Dictionary = towers[i]
-			var right: Dictionary = towers[j]
-			var dx: int = absi(int(left["grid_x"]) - int(right["grid_x"]))
-			var dy: int = absi(int(left["grid_y"]) - int(right["grid_y"]))
-			if dx + dy != 1:
-				continue
-			var left_heat: float = float(left["thermal"]["heat"]) / maxf(1.0, float(left["thermal"]["capacity"]))
-			var right_heat: float = float(right["thermal"]["heat"]) / maxf(1.0, float(right["thermal"]["capacity"]))
-			var score: float = _affinity_for(left["residue_class"], right["residue_class"]) * maxf(0.0, 1.0 - ((left_heat + right_heat) * 0.5) * 0.4)
-			if absf(score) < 0.2:
-				continue
-			tower_bonds.append({"from": left["pos"], "to": right["pos"], "strength": score})
-
-func _affinity_for(left: String, right: String) -> float:
-	if left == "positively_charged" and right == "negatively_charged":
-		return 0.88
-	if left == "negatively_charged" and right == "positively_charged":
-		return 0.88
-	if left == "nonpolar" and right == "nonpolar":
-		return 0.95
-	if left == "polar_uncharged" and right == "polar_uncharged":
-		return 0.50
-	if left == right and (left == "positively_charged" or left == "negatively_charged"):
-		return -0.72
-	if left == "special" or right == "special":
-		return 0.18
-	return -0.20
+	var graph_input: Array[Dictionary] = []
+	for t: Dictionary in towers:
+		graph_input.append(t)
+	var graph_payload: Dictionary = TowerGraph.new().sync_from_towers(graph_input)
+	tower_bonds = graph_payload.get("bonds", [])
 
 func _distance_to_path(pos: Vector2) -> float:
 	var closest: float = INF
 	for i: int in range(path_points.size() - 1):
-		var a: Vector2 = path_points[i]
-		var b: Vector2 = path_points[i + 1]
-		var projected: Vector2 = Geometry2D.get_closest_point_to_segment(pos, a, b)
+		var projected: Vector2 = Geometry2D.get_closest_point_to_segment(pos, path_points[i], path_points[i + 1])
 		closest = minf(closest, pos.distance_to(projected))
 	return closest
 
@@ -321,12 +287,27 @@ func _highlight_tower(pos: Vector2) -> void:
 		if Vector2(tower_data["pos"]).distance_to(pos) <= 42.0:
 			tower_data["highlight"] = 1.0
 
+func _average_free_energy() -> float:
+	if towers.is_empty():
+		return 1.0
+	var sum: float = 0.0
+	for t: Dictionary in towers:
+		sum += clampf(float(t.get("normalized_heat", 0.0)), 0.0, 2.0)
+	return sum / float(towers.size())
+
 func _check_win_condition() -> void:
-	if wave_index > wave_count and enemies.is_empty() and game_state == "running":
-		game_state = "won"
-		status_label.text = "Run cleared. Ready for next procedural route."
-		action_button.text = "Next Level"
-		action_button.visible = true
+	if wave_index <= wave_count or not enemies.is_empty() or game_state != "running":
+		return
+	var free_energy: float = _average_free_energy()
+	if free_energy > free_energy_threshold or tower_bonds.size() < minimum_bonds:
+		_set_loss_state()
+		status_label.text = "Fold unstable. Improve bond count or reduce heat."
+		return
+	game_state = "won"
+	TutorialManager.complete_level()
+	status_label.text = "Campaign node cleared. Fold stabilized."
+	action_button.text = "Next Level"
+	action_button.visible = true
 
 func _set_loss_state() -> void:
 	game_state = "lost"
@@ -364,31 +345,23 @@ func _draw() -> void:
 	if path_points.size() >= 2:
 		draw_polyline(path_points, Color("f59e0b"), 34.0, true)
 		draw_polyline(path_points, Color("fde68a"), 8.0, true)
-
 	for enemy_data: Dictionary in enemies:
 		var p: Vector2 = enemy_data["pos"]
-		draw_polygon([
-			p + Vector2(0, -14),
-			p + Vector2(13, 11),
-			p + Vector2(-13, 11),
-		], [Color("f8fafc")])
-
-	for bond in tower_bonds:
+		draw_polygon([p + Vector2(0, -14), p + Vector2(13, 11), p + Vector2(-13, 11)], [Color("f8fafc")])
+	for bond: Dictionary in tower_bonds:
 		var intensity: float = clampf(absf(float(bond["strength"])), 0.2, 1.0)
 		draw_line(bond["from"], bond["to"], Color(0.6, 0.9, 1.0, 0.2 + intensity * 0.3), 3.0)
-
-	for t in towers:
-		var thermal = t["thermal"]
+	for t: Dictionary in towers:
+		var thermal: Dictionary = t["thermal"]
 		var heat_ratio: float = clampf(maxf(float(t.get("normalized_heat", 0.0)), float(thermal["heat"]) / float(thermal["capacity"])), 0.0, 1.0)
-		var c := Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
-		if thermal["overheated"]:
+		var c: Color = Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
+		if bool(thermal["overheated"]):
 			c = Color(1.0, 0.2, 0.1, 1.0)
 		draw_circle(t["pos"], 28.0, c)
 		if show_range_overlay:
 			draw_arc(t["pos"], t["radius"], 0.0, TAU, 48, Color(0.5, 0.5, 0.6, 0.2), 2.0)
 		if show_attack_visualization and t["last_target"] != null:
 			draw_line(t["pos"], t["last_target"], Color(1.0, 0.4, 0.3, 0.6), 3.0)
-
-		if t["highlight"] > 0.0:
+		if float(t["highlight"]) > 0.0:
 			draw_circle(t["pos"], 38.0, Color(1, 1, 1, 0.2))
-			t["highlight"] = max(0.0, t["highlight"] - 0.04)
+			t["highlight"] = maxf(0.0, float(t["highlight"]) - 0.04)
