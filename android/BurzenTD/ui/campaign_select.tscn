@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/campaign_select.gd" id="1_script"]
+
+[node name="CampaignSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_script")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.08, 0.13, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -320.0
+offset_right = 220.0
+offset_bottom = 320.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Demo Campaign"
+horizontal_alignment = 1
+
+[node name="L1" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Level 1 - First Fold"
+
+[node name="L2" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Level 2 - Thermal Balance"
+
+[node name="L3" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Level 3 - Neighbor Bonds"
+
+[node name="L4" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Level 4 - Tissue Emergence"
+
+[node name="L5" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Level 5 - Pathway Design"
+
+[node name="Back" type="Button" parent="VBox"]
+layout_mode = 2
+text = "Back"
+
+[connection signal="pressed" from="VBox/L1" to="." method="_on_level_pressed" binds= ["level_01_first_fold"]]
+[connection signal="pressed" from="VBox/L2" to="." method="_on_level_pressed" binds= ["level_02_thermal_balance"]]
+[connection signal="pressed" from="VBox/L3" to="." method="_on_level_pressed" binds= ["level_03_neighbor_bonds"]]
+[connection signal="pressed" from="VBox/L4" to="." method="_on_level_pressed" binds= ["level_04_tissue_emergence"]]
+[connection signal="pressed" from="VBox/L5" to="." method="_on_level_pressed" binds= ["level_05_pathway_design"]]
+[connection signal="pressed" from="VBox/Back" to="." method="_on_back_pressed"]

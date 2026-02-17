@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – HEAT & SELECTION MODULE
+# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
 extends Node
 
 class_name HeatEngine
@@ -54,7 +54,7 @@ func apply_tower_tick(tower: Dictionary, delta: float, nearby_mob_density: float
 	var next_tower: Dictionary = tower.duplicate(true)
 	var residue_class: String = str(next_tower.get("residue_class", "special"))
 	var heat: float = float(next_tower.get("heat_score", 0.0))
-	var base_generation: float = float(config.get("base_heat_generation", 0.8))
+	var base_generation: float = float(tower.get("heat_gen_rate", config.get("base_heat_generation", 0.8)))
 	var difficulty_scalar: float = _difficulty_scalar()
 	var global_multiplier: float = float(runtime.get("global_heat_multiplier", 1.0))
 	var shot_gain: float = 1.0 if fired else 0.0
@@ -63,7 +63,8 @@ func apply_tower_tick(tower: Dictionary, delta: float, nearby_mob_density: float
 	var cooling: float = float(config.get("heat_dissipation_rate", 0.35)) * float(runtime.get("cooling_efficiency", 1.0))
 	heat = maxf(0.0, heat - cooling * delta)
 	var threshold: float = _threshold_for_residue(residue_class)
-	var tolerance_boost: float = 1.0 + float(runtime.get("tower_heat_tolerance_boost", 0.0))
+	var tower_tolerance: float = float(tower.get("heat_tolerance_value", 1.0))
+	var tolerance_boost: float = (1.0 + float(runtime.get("tower_heat_tolerance_boost", 0.0))) * tower_tolerance
 	threshold *= tolerance_boost
 	var normalized_heat: float = clampf(heat / maxf(threshold, 0.001), 0.0, 2.0)
 	next_tower["heat_score"] = heat
@@ -71,6 +72,9 @@ func apply_tower_tick(tower: Dictionary, delta: float, nearby_mob_density: float
 	next_tower["thermal_state"] = normalized_heat
 	next_tower["misfold_probability"] = misfold_probability(normalized_heat)
 	next_tower["is_misfolded"] = bool(next_tower.get("is_misfolded", false)) or normalized_heat >= 1.0
+	if str(tower.get("tower_id", "")) == "molecular_chaperone":
+		heat = maxf(0.0, heat - 0.8 * delta)
+		next_tower["rescues_misfold"] = true
 	return next_tower
 
 func bond_strength(base_strength: float, left_normalized_heat: float, right_normalized_heat: float) -> float:

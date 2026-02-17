@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – HEAT & SELECTION MODULE
+# GODOT 4.6.1 STRICT – DEMO CAMPAIGN v0.00.6
 extends Control
 
 class_name TowerSelectionUI
@@ -6,17 +6,14 @@ class_name TowerSelectionUI
 signal tower_selected(selection: Dictionary)
 signal tower_confirmed(selection: Dictionary, position: Vector2)
 
-const DEFAULT_CATALOG: Array[Dictionary] = [
-	{"tower_id": "triangle", "residue_class": "nonpolar", "heat_tolerance": "high", "heat_gen_rate": 0.9, "preferred_bind": "nonpolar", "folding_role": "hydrophobic_core", "build_cost": 14},
-	{"tower_id": "water", "residue_class": "polar_uncharged", "heat_tolerance": "medium", "heat_gen_rate": 0.6, "preferred_bind": "polar_uncharged", "folding_role": "surface_stabilizer", "build_cost": 10},
-	{"tower_id": "fire", "residue_class": "positively_charged", "heat_tolerance": "medium", "heat_gen_rate": 1.1, "preferred_bind": "negatively_charged", "folding_role": "allosteric_trigger", "build_cost": 16},
-	{"tower_id": "air", "residue_class": "negatively_charged", "heat_tolerance": "medium", "heat_gen_rate": 1.0, "preferred_bind": "positively_charged", "folding_role": "sheet_rigidity", "build_cost": 15},
-	{"tower_id": "synthesis_hub", "residue_class": "special", "heat_tolerance": "high", "heat_gen_rate": 0.5, "preferred_bind": "special", "folding_role": "chaperone", "build_cost": 20},
-]
+const TOWER_DEFINITIONS_PATH: String = "res://data/towers/tower_definitions.json"
 
-var catalog: Array[Dictionary] = DEFAULT_CATALOG.duplicate(true)
+var catalog: Array[Dictionary] = []
 var active_tab: String = "all"
 var active_selection: Dictionary = {}
+
+func _ready() -> void:
+	catalog = _load_catalog(TOWER_DEFINITIONS_PATH)
 
 func set_catalog(next_catalog: Array[Dictionary]) -> void:
 	catalog = next_catalog.duplicate(true)
@@ -24,10 +21,13 @@ func set_catalog(next_catalog: Array[Dictionary]) -> void:
 func set_tab(tab: String) -> void:
 	active_tab = tab
 
-func visible_catalog(global_heat_ratio: float) -> Array[Dictionary]:
+func visible_catalog(global_heat_ratio: float, unlocked_towers: Array[String] = []) -> Array[Dictionary]:
 	var filtered: Array[Dictionary] = []
 	for entry: Dictionary in catalog:
-		if active_tab == "heat_tolerant" and str(entry.get("heat_tolerance", "low")) != "high":
+		var tower_id: String = str(entry.get("tower_id", ""))
+		if not unlocked_towers.is_empty() and not unlocked_towers.has(tower_id):
+			continue
+		if active_tab == "heat_tolerant" and not _is_high_tolerance(str(entry.get("heat_tolerance", "low"))):
 			continue
 		if global_heat_ratio > 0.5 and str(entry.get("heat_tolerance", "low")) == "low":
 			continue
@@ -52,7 +52,7 @@ func optimize_for_current_heat(global_heat_ratio: float) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score: float = INF
 	for entry: Dictionary in visible_catalog(global_heat_ratio):
-		var tolerance_score: float = 1.0 if str(entry.get("heat_tolerance", "low")) == "high" else 0.4
+		var tolerance_score: float = 1.0 if _is_high_tolerance(str(entry.get("heat_tolerance", "low"))) else 0.4
 		var score: float = projected_heat_delta(entry, global_heat_ratio) - tolerance_score
 		if score < best_score:
 			best_score = score
@@ -66,3 +66,23 @@ func confirm_selection(position: Vector2, nearby_density: float) -> Dictionary:
 	payload["projected_heat_delta"] = projected_heat_delta(payload, nearby_density)
 	emit_signal("tower_confirmed", payload, position)
 	return payload
+
+func _load_catalog(path: String) -> Array[Dictionary]:
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return []
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return []
+	var towers_variant: Variant = Dictionary(parsed).get("towers", [])
+	if typeof(towers_variant) != TYPE_ARRAY:
+		return []
+	var parsed_array: Array = towers_variant
+	var loaded: Array[Dictionary] = []
+	for item: Variant in parsed_array:
+		if typeof(item) == TYPE_DICTIONARY:
+			loaded.append(Dictionary(item))
+	return loaded
+
+func _is_high_tolerance(label: String) -> bool:
+	return label == "high" or label == "very_high"

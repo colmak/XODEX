@@ -77,3 +77,23 @@ See also:
   - `visual_heat_feedback_intensity`
   - `educational_heat_tooltips`
 - Hot-swapping works by forwarding updated values to `HeatEngine.set_runtime_settings(...)`.
+
+## v0.00.6 Demo Campaign Implementation Notes
+
+The runtime now consumes `res://data/towers/tower_definitions.json` as the canonical tower catalog for the playable demo campaign.
+
+Implemented 8-tower set:
+1. Hydrophobic Anchor (`hydrophobic_anchor`)
+2. Polar Hydrator (`polar_hydrator`)
+3. Cationic Defender (`cationic_defender`)
+4. Anionic Repulsor (`anionic_repulsor`)
+5. Proline Hinge (`proline_hinge`)
+6. Alpha-Helix Pulsar (`alpha_helix_pulsar`)
+7. Beta-Sheet Fortifier (`beta_sheet_fortifier`)
+8. Molecular Chaperone (`molecular_chaperone`)
+
+Integration points:
+- `TowerSelectionUI.gd` loads catalog entries from JSON and exposes educational tooltips.
+- `HeatEngine.gd` applies tower-specific generation/tolerance values, including chaperone cooling hooks.
+- `LevelManager.gd` loads `res://levels/demo/*.json` data-driven campaign levels.
+- `TutorialManager.gd` tracks step progression and completion persistence per demo level.
