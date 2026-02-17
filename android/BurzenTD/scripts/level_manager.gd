@@ -2,9 +2,37 @@ extends Node
 
 const LEVEL_SCENE := "res://scenes/level_scene.tscn"
 const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
+const SETTINGS_FILE := "user://burzen_settings.cfg"
+
+const DEFAULT_SETTINGS := {
+	"general": {
+		"master_volume": 0.8,
+		"game_speed": 1.0,
+		"hud_enabled": true,
+	},
+	"tower": {
+		"attack_visualization": true,
+		"range_overlay": true,
+		"keystone_abilities": true,
+	},
+	"wave": {
+		"spawn_rate_multiplier": 1.0,
+		"difficulty_scale": 1.0,
+	},
+	"advanced": {
+		"debug_logs": false,
+		"simulation_mode": false,
+	},
+}
 
 var level_index := 0
 var current_seed := 0
+var settings: Dictionary = {}
+
+func _ready() -> void:
+	settings = DEFAULT_SETTINGS.duplicate(true)
+	load_settings()
+	apply_audio_settings()
 
 func start_new_run() -> void:
 	level_index = 1
@@ -26,9 +54,15 @@ func get_level_config() -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = current_seed + level_index * 101
 	var pattern := int(rng.randi_range(0, 4))
-	var wave_count: int = clampi(2 + level_index, 2, 6)
-	var enemies_per_wave: int = clampi(5 + level_index * 2, 5, 20)
-	var enemy_speed: float = 105.0 + float(level_index) * 10.0
+	var game_settings := get_settings()
+	var wave_settings: Dictionary = game_settings.get("wave", {})
+	var difficulty_scale: float = float(wave_settings.get("difficulty_scale", 1.0))
+	var spawn_rate_multiplier: float = float(wave_settings.get("spawn_rate_multiplier", 1.0))
+
+	var wave_count: int = clampi(int(round((2 + level_index) * difficulty_scale)), 2, 8)
+	var enemies_per_wave: int = clampi(int(round((5 + level_index * 2) * difficulty_scale)), 5, 30)
+	var enemy_speed: float = (105.0 + float(level_index) * 10.0) * difficulty_scale
+	var spawn_interval: float = clampf(0.8 / maxf(spawn_rate_multiplier, 0.25), 0.45, 2.0)
 	var path_points := _build_path(pattern, rng)
 
 	return {
@@ -38,8 +72,52 @@ func get_level_config() -> Dictionary:
 		"wave_count": wave_count,
 		"enemies_per_wave": enemies_per_wave,
 		"enemy_speed": enemy_speed,
+		"spawn_interval": spawn_interval,
 		"path_points": path_points,
 	}
+
+func get_settings() -> Dictionary:
+	return settings.duplicate(true)
+
+func update_settings(section: String, key: String, value) -> void:
+	if not settings.has(section):
+		return
+	var section_data: Dictionary = settings[section]
+	section_data[key] = value
+	settings[section] = section_data
+	apply_audio_settings()
+	save_settings()
+
+func reset_settings() -> void:
+	settings = DEFAULT_SETTINGS.duplicate(true)
+	apply_audio_settings()
+	save_settings()
+
+func apply_audio_settings() -> void:
+	var general_settings: Dictionary = settings.get("general", {})
+	var volume: float = clampf(float(general_settings.get("master_volume", 0.8)), 0.0, 1.0)
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(volume, 0.001)))
+
+func save_settings() -> void:
+	var cfg := ConfigFile.new()
+	for section in settings.keys():
+		var section_data: Dictionary = settings[section]
+		for key in section_data.keys():
+			cfg.set_value(section, key, section_data[key])
+	cfg.save(SETTINGS_FILE)
+
+func load_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_FILE) != OK:
+		return
+	for section in DEFAULT_SETTINGS.keys():
+		if not settings.has(section):
+			settings[section] = {}
+		var section_data: Dictionary = settings[section]
+		var defaults: Dictionary = DEFAULT_SETTINGS[section]
+		for key in defaults.keys():
+			section_data[key] = cfg.get_value(section, key, defaults[key])
+		settings[section] = section_data
 
 func _load_level_scene() -> void:
 	get_tree().change_scene_to_file(LEVEL_SCENE)

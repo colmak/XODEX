@@ -38,17 +38,26 @@ var wave_count := 3
 var enemies_per_wave := 6
 var enemies_spawned_in_wave := 0
 var enemy_speed := 120.0
+var enemy_spawn_interval := ENEMY_SPAWN_INTERVAL
 var lives := 3
 var score := 0
 
+var game_speed := 1.0
+var hud_enabled := true
+var show_range_overlay := true
+var show_attack_visualization := true
+var debug_logs_enabled := false
+
 func _ready() -> void:
 	set_process(true)
+	_apply_runtime_settings()
 	_load_level()
 	_update_hud()
 
 func _process(delta: float) -> void:
+	var scaled_delta := delta * game_speed
 	if two_finger_timer >= 0.0:
-		two_finger_timer -= delta
+		two_finger_timer -= scaled_delta
 		if two_finger_timer < 0.0:
 			two_finger_timer = -1.0
 
@@ -56,9 +65,9 @@ func _process(delta: float) -> void:
 		queue_redraw()
 		return
 
-	_handle_spawning(delta)
-	_update_enemies(delta)
-	_update_towers(delta)
+	_handle_spawning(scaled_delta)
+	_update_enemies(scaled_delta)
+	_update_towers(scaled_delta)
 	_check_win_condition()
 	_update_hud()
 	queue_redraw()
@@ -73,13 +82,17 @@ func _load_level() -> void:
 	wave_count = config.get("wave_count", 3)
 	enemies_per_wave = config.get("enemies_per_wave", 6)
 	enemy_speed = config.get("enemy_speed", 120.0)
+	_apply_runtime_settings()
 	wave_index = 1
 	enemies_spawned_in_wave = 0
-	spawn_timer = 0.25
+	enemy_spawn_interval = float(config.get("spawn_interval", ENEMY_SPAWN_INTERVAL))
+	spawn_timer = enemy_spawn_interval
 	game_state = "running"
 	lives = 3
 	score = 0
 	status_label.text = "Tap to place towers. Hold on tower to pulse heat ring."
+	if not show_attack_visualization:
+		status_label.text += " Attack rays disabled in settings."
 	action_button.visible = false
 	_build_path_cache()
 	level_label.text = "Level %d  | Seed %d" % [config.get("level_index", 1), config.get("seed", 0)]
@@ -92,6 +105,20 @@ func _build_path_cache() -> void:
 		path_lengths.append(segment_length)
 		total_path_length += segment_length
 
+
+func _apply_runtime_settings() -> void:
+	var settings: Dictionary = LevelManager.get_settings()
+	var general: Dictionary = settings.get("general", {})
+	var tower: Dictionary = settings.get("tower", {})
+	var advanced: Dictionary = settings.get("advanced", {})
+	game_speed = float(general.get("game_speed", 1.0))
+	hud_enabled = bool(general.get("hud_enabled", true))
+	show_range_overlay = bool(tower.get("range_overlay", true))
+	show_attack_visualization = bool(tower.get("attack_visualization", true))
+	debug_logs_enabled = bool(advanced.get("debug_logs", false))
+	if has_node("HUD"):
+		$HUD.visible = hud_enabled
+
 func _handle_spawning(delta: float) -> void:
 	if wave_index > wave_count:
 		return
@@ -102,7 +129,7 @@ func _handle_spawning(delta: float) -> void:
 	if enemies_spawned_in_wave < enemies_per_wave:
 		_spawn_enemy()
 		enemies_spawned_in_wave += 1
-		spawn_timer = ENEMY_SPAWN_INTERVAL
+		spawn_timer = enemy_spawn_interval
 	elif enemies.is_empty():
 		wave_index += 1
 		enemies_spawned_in_wave = 0
@@ -145,6 +172,7 @@ func _point_along_path(progress: float) -> Vector2:
 
 func _update_towers(delta: float) -> void:
 	for t in towers:
+		t["last_target"] = null
 		var thermal = t["thermal"]
 		thermal["heat"] = max(0.0, thermal["heat"] - thermal["dissipation_rate"] * delta)
 		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
@@ -153,17 +181,19 @@ func _update_towers(delta: float) -> void:
 		if thermal["overheated"]:
 			continue
 
-		if _tower_has_target(t):
+		var target := _tower_target(t)
+		if target != null:
+			t["last_target"] = target
 			thermal["heat"] += thermal["heat_per_shot"]
 			score += 1
 			if thermal["heat"] >= thermal["capacity"]:
 				thermal["overheated"] = true
 
-func _tower_has_target(tower: Dictionary) -> bool:
+func _tower_target(tower: Dictionary):
 	for e in enemies:
 		if e["pos"].distance_to(tower["pos"]) <= tower["radius"]:
-			return true
-	return false
+			return e["pos"]
+	return null
 
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
@@ -198,6 +228,8 @@ func _place_tower(pos: Vector2) -> void:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
 		status_label.text = "Too close to path. Place tower on open lane."
+		if debug_logs_enabled:
+			print("[settings/debug] placement rejected near path:", pos)
 		return
 
 	var thermal := THERMAL_DEFAULT.duplicate(true)
@@ -208,6 +240,7 @@ func _place_tower(pos: Vector2) -> void:
 		"radius": 180.0,
 		"thermal": thermal,
 		"highlight": 0.0,
+		"last_target": null,
 	})
 
 func _distance_to_path(pos: Vector2) -> float:
@@ -256,7 +289,9 @@ func _on_menu_button_pressed() -> void:
 	LevelManager.return_to_menu()
 
 func _update_hud() -> void:
-	wave_label.text = "Wave %d/%d" % [min(wave_index, wave_count), wave_count]
+	if not hud_enabled:
+		return
+	wave_label.text = "Wave %d/%d | Speed %.2fx" % [min(wave_index, wave_count), wave_count, game_speed]
 	lives_label.text = "Lives: %d" % max(lives, 0)
 	score_label.text = "Heat Score: %d" % score
 
@@ -281,7 +316,10 @@ func _draw() -> void:
 		if thermal["overheated"]:
 			c = Color(1.0, 0.2, 0.1, 1.0)
 		draw_circle(t["pos"], 28.0, c)
-		draw_arc(t["pos"], t["radius"], 0.0, TAU, 48, Color(0.5, 0.5, 0.6, 0.2), 2.0)
+		if show_range_overlay:
+			draw_arc(t["pos"], t["radius"], 0.0, TAU, 48, Color(0.5, 0.5, 0.6, 0.2), 2.0)
+		if show_attack_visualization and t["last_target"] != null:
+			draw_line(t["pos"], t["last_target"], Color(1.0, 0.4, 0.3, 0.6), 3.0)
 
 		if t["highlight"] > 0.0:
 			draw_circle(t["pos"], 38.0, Color(1, 1, 1, 0.2))
