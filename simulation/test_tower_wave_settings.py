@@ -60,6 +60,8 @@ class TowerWaveSettingsTests(unittest.TestCase):
         self.assertIn("triangle", options)
         self.assertEqual(options["triangle"]["targeting"], "closest")
         self.assertIn("fire", options["triangle"]["replacements"])
+        self.assertEqual(options["triangle"]["residue_class"], "nonpolar")
+        self.assertIn("hydrophobic_core", options["triangle"]["modifiers"])
 
 
 if __name__ == "__main__":

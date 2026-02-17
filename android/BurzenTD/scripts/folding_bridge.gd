@@ -3,6 +3,7 @@ extends Node
 class_name FoldingBridge
 
 signal fold_tick_ready(delta_payload: Dictionary)
+signal graph_delta_ready(delta_payload: Dictionary)
 
 var affinity_table: Dictionary = {}
 var environment_state: Dictionary = {
@@ -35,6 +36,16 @@ func project_fold_tick(nodes: Array, bonds: Array, domains: Array, global_energy
 		"environment_state": environment_state.duplicate(true),
 	}
 	emit_signal("fold_tick_ready", payload)
+	return payload
+
+
+func project_graph_delta(towers: Array, bonds: Array, graph_stats: Dictionary) -> Dictionary:
+	var payload: Dictionary = {
+		"tower_count": towers.size(),
+		"bond_count": bonds.size(),
+		"graph_stats": graph_stats.duplicate(true),
+	}
+	emit_signal("graph_delta_ready", payload)
 	return payload
 
 func can_place_without_spoc_violation(candidate_energy_spike: float, steric_clash_score: float) -> bool:
