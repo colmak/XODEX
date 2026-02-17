@@ -13,6 +13,8 @@ class TowerSetting:
     heat_scale: float
     targeting: str
     replacements: tuple[str, ...]
+    residue_class: str
+    modifiers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -48,10 +50,40 @@ class WaveDamageReport:
 
 
 DEFAULT_TOWERS: tuple[TowerSetting, ...] = (
-    TowerSetting("triangle", dps=42.0, heat_scale=0.24, targeting="closest", replacements=("square", "fire")),
-    TowerSetting("square", dps=28.0, heat_scale=0.16, targeting="highest_hp", replacements=("triangle", "water")),
-    TowerSetting("fire", dps=34.0, heat_scale=0.08, targeting="clustered", replacements=("earth", "triangle")),
-    TowerSetting("water", dps=21.0, heat_scale=0.06, targeting="fastest", replacements=("fire", "air")),
+    TowerSetting(
+        "triangle",
+        dps=42.0,
+        heat_scale=0.24,
+        targeting="closest",
+        replacements=("square", "fire"),
+        residue_class="nonpolar",
+        modifiers=("hydrophobic_core",),
+    ),
+    TowerSetting(
+        "square",
+        dps=28.0,
+        heat_scale=0.16,
+        targeting="highest_hp",
+        replacements=("triangle", "water"),
+        residue_class="nonpolar",
+        modifiers=("hydrophobic_core",),
+    ),
+    TowerSetting(
+        "fire",
+        dps=34.0,
+        heat_scale=0.08,
+        targeting="clustered",
+        replacements=("earth", "triangle"),
+        residue_class="positively_charged",
+    ),
+    TowerSetting(
+        "water",
+        dps=21.0,
+        heat_scale=0.06,
+        targeting="fastest",
+        replacements=("fire", "air"),
+        residue_class="polar_uncharged",
+    ),
 )
 
 DEFAULT_MOBS: tuple[MobArchetype, ...] = (
@@ -126,6 +158,8 @@ def tower_setting_options(towers: tuple[TowerSetting, ...]) -> dict[str, dict[st
             "replacements": list(tower.replacements),
             "heat_scale": tower.heat_scale,
             "dps": tower.dps,
+            "residue_class": tower.residue_class,
+            "modifiers": list(tower.modifiers),
         }
         for tower in towers
     }

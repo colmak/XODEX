@@ -23,6 +23,7 @@ const THERMAL_DEFAULT: Dictionary = {
 
 var towers: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
+var tower_bonds: Array[Dictionary] = []
 var spawn_timer: float = 0.0
 var touch_down_time: Dictionary = {}
 var active_touch_count: int = 0
@@ -68,6 +69,7 @@ func _process(delta: float) -> void:
 	_handle_spawning(scaled_delta)
 	_update_enemies(scaled_delta)
 	_update_towers(scaled_delta)
+	_refresh_tower_bonds()
 	_check_win_condition()
 	_update_hud()
 	queue_redraw()
@@ -236,12 +238,53 @@ func _place_tower(pos: Vector2) -> void:
 	thermal["heat"] = 0.0
 	thermal["overheated"] = false
 	towers.append({
+		"id": towers.size() + 1,
 		"pos": pos,
+		"grid_x": int(round(pos.x / 80.0)),
+		"grid_y": int(round(pos.y / 80.0)),
 		"radius": 180.0,
 		"thermal": thermal,
+		"residue_class": _residue_for_index(towers.size()),
 		"highlight": 0.0,
 		"last_target": null,
 	})
+
+
+func _residue_for_index(index: int) -> String:
+	var mapping: Array[String] = ["nonpolar", "polar_uncharged", "positively_charged", "negatively_charged", "special"]
+	return mapping[index % mapping.size()]
+
+func _refresh_tower_bonds() -> void:
+	tower_bonds.clear()
+	for i in range(towers.size()):
+		for j in range(i + 1, towers.size()):
+			var left: Dictionary = towers[i]
+			var right: Dictionary = towers[j]
+			var dx: int = absi(int(left["grid_x"]) - int(right["grid_x"]))
+			var dy: int = absi(int(left["grid_y"]) - int(right["grid_y"]))
+			if dx + dy != 1:
+				continue
+			var left_heat: float = float(left["thermal"]["heat"]) / maxf(1.0, float(left["thermal"]["capacity"]))
+			var right_heat: float = float(right["thermal"]["heat"]) / maxf(1.0, float(right["thermal"]["capacity"]))
+			var score: float = _affinity_for(left["residue_class"], right["residue_class"]) * maxf(0.0, 1.0 - ((left_heat + right_heat) * 0.5) * 0.4)
+			if absf(score) < 0.2:
+				continue
+			tower_bonds.append({"from": left["pos"], "to": right["pos"], "strength": score})
+
+func _affinity_for(left: String, right: String) -> float:
+	if left == "positively_charged" and right == "negatively_charged":
+		return 0.88
+	if left == "negatively_charged" and right == "positively_charged":
+		return 0.88
+	if left == "nonpolar" and right == "nonpolar":
+		return 0.95
+	if left == "polar_uncharged" and right == "polar_uncharged":
+		return 0.50
+	if left == right and (left == "positively_charged" or left == "negatively_charged"):
+		return -0.72
+	if left == "special" or right == "special":
+		return 0.18
+	return -0.20
 
 func _distance_to_path(pos: Vector2) -> float:
 	var closest: float = INF
@@ -308,6 +351,10 @@ func _draw() -> void:
 			p + Vector2(13, 11),
 			p + Vector2(-13, 11),
 		], [Color("f8fafc")])
+
+	for bond in tower_bonds:
+		var intensity: float = clampf(absf(float(bond["strength"])), 0.2, 1.0)
+		draw_line(bond["from"], bond["to"], Color(0.6, 0.9, 1.0, 0.2 + intensity * 0.3), 3.0)
 
 	for t in towers:
 		var thermal = t["thermal"]
