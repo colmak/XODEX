@@ -50,6 +50,7 @@ Before opening a PR, verify:
 - [ ] Branch follows naming convention.
 - [ ] `./scripts/run_tests.sh` passes locally.
 - [ ] Relevant docs are updated (`README.md`, `docs/` specs).
+- [ ] Generated artifacts remain untracked (`simulation/logs/*`, APK/AAB outputs, local keystores) unless intentionally release-staged.
 - [ ] Changes are tested on target platform if applicable (Android or desktop simulation).
 - [ ] Any balancing changes include rationale and sample before/after values.
 - [ ] Screenshots/video attached for UX-visible changes.

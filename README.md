@@ -77,6 +77,7 @@ This runs thermal model regression checks and validates release export metadata 
 - WebSim module-level creator spec: `docs/websim_module_level_creator.md`
 - Protein Tower formal spec + pattern synthesis layer (`XODEX.PROTEIN_TOWER`, v0.00.3.0(N)): `docs/protein_tower_v0_00_3_0N.md`
 - BURZEN engine formalization (platform-invariant rendering monad): `docs/burzen_engine_formalization.md`
+- SPOC/NESOROX/WASMUTABLE moon mission integration architecture: `docs/moon_mission_spoc_nesorox_wasmutable_integration.md`
 
 ## Contributor resources
 
@@ -88,3 +89,10 @@ This runs thermal model regression checks and validates release export metadata 
 
 - **v0.00.4:** richer environmental trigger tiles + corridor editor
 - **v0.01.0:** gem modifiers and tower specialization trees
+
+## Repository hygiene
+
+- Generated simulation logs should be written under `simulation/logs/` and are git-ignored by default (except optional marker files such as `.gitkeep`).
+- Local Android signing keys (`*.jks`, `*.keystore`) are intentionally ignored and must remain outside committed source.
+- Generated APK/AAB binaries under `builds/<version>/` are ignored unless explicitly staged for a release workflow.
+
