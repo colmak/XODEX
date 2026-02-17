@@ -1,12 +1,12 @@
 extends Node2D
 
-const MAX_TOWERS := 7
-const ENEMY_SPAWN_INTERVAL := 0.8
-const LONG_PRESS_SECONDS := 0.4
-const TWO_FINGER_WINDOW := 0.18
-const PATH_SAFE_DISTANCE := 72.0
+const MAX_TOWERS: int = 7
+const ENEMY_SPAWN_INTERVAL: float = 0.8
+const LONG_PRESS_SECONDS: float = 0.4
+const TWO_FINGER_WINDOW: float = 0.18
+const PATH_SAFE_DISTANCE: float = 72.0
 
-const THERMAL_DEFAULT := {
+const THERMAL_DEFAULT: Dictionary = {
 	"capacity": 100.0,
 	"heat_per_shot": 18.0,
 	"dissipation_rate": 14.0,
@@ -21,15 +21,15 @@ const THERMAL_DEFAULT := {
 @onready var action_button: Button = %ActionButton
 @onready var menu_button: Button = %MenuButton
 
-var towers: Array = []
-var enemies: Array = []
-var spawn_timer := 0.0
-var touch_down_time := {}
-var active_touch_count := 0
-var two_finger_timer := -1.0
+var towers: Array[Dictionary] = []
+var enemies: Array[Dictionary] = []
+var spawn_timer: float = 0.0
+var touch_down_time: Dictionary = {}
+var active_touch_count: int = 0
+var two_finger_timer: float = -1.0
 
-var game_state := "running"
-var path_points := PackedVector2Array()
+var game_state: String = "running"
+var path_points: PackedVector2Array = PackedVector2Array()
 var path_lengths: Array[float] = []
 var total_path_length := 0.0
 
@@ -95,13 +95,13 @@ func _load_level() -> void:
 		status_label.text += " Attack rays disabled in settings."
 	action_button.visible = false
 	_build_path_cache()
-	level_label.text = "Level %d  | Seed %d" % [config.get("level_index", 1), config.get("seed", 0)]
+	level_label.text = "Level %d  | Seed %d" % [int(config.get("level_index", 1)), int(config.get("seed", 0))]
 
 func _build_path_cache() -> void:
 	path_lengths.clear()
 	total_path_length = 0.0
-	for i in range(path_points.size() - 1):
-		var segment_length := path_points[i].distance_to(path_points[i + 1])
+	for i: int in range(path_points.size() - 1):
+		var segment_length: float = path_points[i].distance_to(path_points[i + 1])
 		path_lengths.append(segment_length)
 		total_path_length += segment_length
 
@@ -142,15 +142,15 @@ func _spawn_enemy() -> void:
 	})
 
 func _update_enemies(delta: float) -> void:
-	var reached_end := 0
-	for enemy in enemies:
-		enemy["progress"] += enemy_speed * delta
-		enemy["pos"] = _point_along_path(enemy["progress"])
-	if enemies.any(func(e): return e["progress"] >= total_path_length):
-		for e in enemies:
-			if e["progress"] >= total_path_length:
+	var reached_end: int = 0
+	for enemy: Dictionary in enemies:
+		enemy["progress"] = float(enemy["progress"]) + enemy_speed * delta
+		enemy["pos"] = _point_along_path(float(enemy["progress"]))
+	if enemies.any(func(e: Dictionary) -> bool: return float(e["progress"]) >= total_path_length):
+		for enemy_data: Dictionary in enemies:
+			if float(enemy_data["progress"]) >= total_path_length:
 				reached_end += 1
-		enemies = enemies.filter(func(e): return e["progress"] < total_path_length)
+		enemies = enemies.filter(func(e: Dictionary) -> bool: return float(e["progress"]) < total_path_length)
 
 	if reached_end > 0:
 		lives -= reached_end
@@ -161,9 +161,9 @@ func _point_along_path(progress: float) -> Vector2:
 	if path_points.size() < 2:
 		return Vector2(40, 640)
 	var clamped_progress: float = clampf(progress, 0.0, total_path_length)
-	var cursor := 0.0
-	for i in range(path_lengths.size()):
-		var segment := path_lengths[i]
+	var cursor: float = 0.0
+	for i: int in range(path_lengths.size()):
+		var segment: float = path_lengths[i]
 		if clamped_progress <= cursor + segment:
 			var t: float = (clamped_progress - cursor) / maxf(segment, 0.001)
 			return path_points[i].lerp(path_points[i + 1], t)
@@ -178,7 +178,7 @@ func _update_towers(delta: float) -> void:
 		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
 			thermal["overheated"] = false
 
-		if thermal["overheated"]:
+		if bool(thermal["overheated"]):
 			continue
 
 		var target := _tower_target(t)
@@ -186,7 +186,7 @@ func _update_towers(delta: float) -> void:
 			t["last_target"] = target
 			thermal["heat"] += thermal["heat_per_shot"]
 			score += 1
-			if thermal["heat"] >= thermal["capacity"]:
+			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
 
 func _tower_target(tower: Dictionary):
@@ -203,9 +203,9 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 			two_finger_timer = TWO_FINGER_WINDOW
 	else:
 		active_touch_count = max(0, active_touch_count - 1)
-		var now := Time.get_ticks_msec() / 1000.0
-		var start = touch_down_time.get(event.index, now)
-		var hold_time: float = now - float(start)
+		var now: float = Time.get_ticks_msec() / 1000.0
+		var start: float = float(touch_down_time.get(event.index, now))
+		var hold_time: float = now - start
 		touch_down_time.erase(event.index)
 
 		if two_finger_timer >= 0.0:
@@ -223,8 +223,8 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 func _place_tower(pos: Vector2) -> void:
 	if towers.size() >= MAX_TOWERS:
 		return
-	for t in towers:
-		if t["pos"].distance_to(pos) < 80.0:
+	for tower_data: Dictionary in towers:
+		if Vector2(tower_data["pos"]).distance_to(pos) < 80.0:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
 		status_label.text = "Too close to path. Place tower on open lane."
@@ -232,7 +232,7 @@ func _place_tower(pos: Vector2) -> void:
 			print("[settings/debug] placement rejected near path:", pos)
 		return
 
-	var thermal := THERMAL_DEFAULT.duplicate(true)
+	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	thermal["heat"] = 0.0
 	thermal["overheated"] = false
 	towers.append({
@@ -244,18 +244,18 @@ func _place_tower(pos: Vector2) -> void:
 	})
 
 func _distance_to_path(pos: Vector2) -> float:
-	var closest := INF
-	for i in range(path_points.size() - 1):
-		var a := path_points[i]
-		var b := path_points[i + 1]
-		var projected := Geometry2D.get_closest_point_to_segment(pos, a, b)
-		closest = min(closest, pos.distance_to(projected))
+	var closest: float = INF
+	for i: int in range(path_points.size() - 1):
+		var a: Vector2 = path_points[i]
+		var b: Vector2 = path_points[i + 1]
+		var projected: Vector2 = Geometry2D.get_closest_point_to_segment(pos, a, b)
+		closest = minf(closest, pos.distance_to(projected))
 	return closest
 
 func _highlight_tower(pos: Vector2) -> void:
-	for t in towers:
-		if t["pos"].distance_to(pos) <= 42.0:
-			t["highlight"] = 1.0
+	for tower_data: Dictionary in towers:
+		if Vector2(tower_data["pos"]).distance_to(pos) <= 42.0:
+			tower_data["highlight"] = 1.0
 
 func _check_win_condition() -> void:
 	if wave_index > wave_count and enemies.is_empty() and game_state == "running":
@@ -301,8 +301,8 @@ func _draw() -> void:
 		draw_polyline(path_points, Color("f59e0b"), 34.0, true)
 		draw_polyline(path_points, Color("fde68a"), 8.0, true)
 
-	for e in enemies:
-		var p: Vector2 = e["pos"]
+	for enemy_data: Dictionary in enemies:
+		var p: Vector2 = enemy_data["pos"]
 		draw_polygon([
 			p + Vector2(0, -14),
 			p + Vector2(13, 11),
