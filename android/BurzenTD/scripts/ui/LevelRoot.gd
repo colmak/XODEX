@@ -13,6 +13,8 @@ signal settings_changed(settings_payload: Dictionary)
 signal start_wave_pressed
 signal tower_upgrade_requested(tower_index: int)
 signal tower_sell_requested(tower_index: int, sell_value: int)
+signal tower_synthesis_confirmed(preview: Dictionary)
+signal tower_synthesis_canceled
 
 const SPEEDS: Array[float] = [1.0, 2.0, 3.0]
 const INFO_AUTO_COLLAPSE_SECONDS: float = 4.0
@@ -24,6 +26,7 @@ var info_visible_for: float = 0.0
 var current_tower_index: int = -1
 var pending_sell_confirm: bool = false
 var current_sell_value: int = 0
+var pending_synthesis_preview: Dictionary = {}
 var user_settings: Dictionary = {
 	"show_grid_highlights": true,
 	"high_contrast_mode": false,
@@ -136,6 +139,20 @@ func set_wave_preview(icons_text: String, forecast: String) -> void:
 func set_status(message: String) -> void:
 	status_label.text = message
 
+func set_synthesis_preview(preview: Dictionary) -> void:
+	pending_synthesis_preview = preview.duplicate(true)
+	var partner_a: String = str(preview.get("left_name", "Left"))
+	var partner_b: String = str(preview.get("right_name", "Right"))
+	var result_name: String = str(preview.get("result_name", "Result"))
+	set_status("Synthesis preview: %s + %s → %s" % [partner_a, partner_b, result_name])
+	place_tower_button.text = "Confirm Synthesis"
+	sell_button.text = "Cancel Synthesis"
+
+func clear_synthesis_preview() -> void:
+	pending_synthesis_preview.clear()
+	place_tower_button.text = "Place Tower"
+	sell_button.text = "Sell"
+
 func configure_pre_wave_overlay(show_overlay: bool, dismissable: bool) -> void:
 	if show_overlay:
 		pause_modal.visible = true
@@ -172,6 +189,10 @@ func _on_pause_pressed() -> void:
 	emit_signal("pause_pressed")
 
 func _on_place_tower_pressed() -> void:
+	if not pending_synthesis_preview.is_empty():
+		emit_signal("tower_synthesis_confirmed", pending_synthesis_preview.duplicate(true))
+		clear_synthesis_preview()
+		return
 	tower_selection_panel.call("set_collapse_highlight", true)
 	set_status("Choose a tower card, then drag on map to place.")
 
@@ -182,6 +203,11 @@ func _on_upgrade_info_pressed() -> void:
 		set_status("Tap a placed tower to inspect upgrade paths.")
 
 func _on_sell_pressed() -> void:
+	if not pending_synthesis_preview.is_empty():
+		emit_signal("tower_synthesis_canceled")
+		clear_synthesis_preview()
+		set_status("Synthesis canceled.")
+		return
 	if current_tower_index < 0:
 		set_status("Tap a tower first to sell it.")
 		return

@@ -8,10 +8,6 @@ signal tower_card_long_pressed(selection: Dictionary)
 const LONG_PRESS_SECONDS: float = 0.45
 const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
 const TOWER_DEFINITIONS_PATH: String = "res://data/towers/tower_definitions.json"
-const TOWER_ICON_SEARCH_PATHS: Array[String] = [
-	"res://assets/towers/%s_geometric.png",
-	"res://assets/towers/geometric_%s.png",
-]
 
 var module: TowerSelectionUI
 var cards: Dictionary = {}
@@ -60,7 +56,7 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
 	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
-	var icon_texture: Texture2D = _resolve_tower_texture(str(entry.get("tower_id", "")))
+	var icon_texture: Texture2D = _resolve_tower_texture(str(entry.get("tower_id", "")), entry)
 	if icon_texture != null:
 		var icon_rect: TextureRect = TextureRect.new()
 		icon_rect.texture = icon_texture
@@ -195,27 +191,12 @@ func _localized_title(entry: Dictionary) -> String:
 		return str(entry.get("display_name_ru", entry.get("display_name", "Tower")))
 	return str(entry.get("display_name", "Tower"))
 
-func _resolve_tower_texture(tower_id: String) -> Texture2D:
-	for template_path: String in TOWER_ICON_SEARCH_PATHS:
-		var icon_path: String = template_path % tower_id
-		if ResourceLoader.exists(icon_path):
-			return load(icon_path) as Texture2D
+func _resolve_tower_texture(tower_id: String, entry: Dictionary) -> Texture2D:
+	var visuals: Dictionary = Dictionary(entry.get("visuals", {}))
+	var explicit_path: String = str(visuals.get("icon_path", ""))
+	if not explicit_path.is_empty() and ResourceLoader.exists(explicit_path):
+		return load(explicit_path) as Texture2D
 	return null
 
 func _load_all_tower_definitions() -> Array[Dictionary]:
-	if not FileAccess.file_exists(TOWER_DEFINITIONS_PATH):
-		return []
-	var file: FileAccess = FileAccess.open(TOWER_DEFINITIONS_PATH, FileAccess.READ)
-	if file == null:
-		return []
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return []
-	var towers_variant: Variant = Dictionary(parsed).get("towers", [])
-	if typeof(towers_variant) != TYPE_ARRAY:
-		return []
-	var loaded: Array[Dictionary] = []
-	for item: Variant in towers_variant:
-		if typeof(item) == TYPE_DICTIONARY:
-			loaded.append(Dictionary(item))
-	return loaded
+	return TowerSchema.load_catalog(TOWER_DEFINITIONS_PATH)

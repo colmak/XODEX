@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "synthesis_mode": "active_transformation",
+  "description": "Active tower-transformation recipes triggered by selecting two adjacent towers and confirming synthesis.",
+  "recipes": [
+    {
+      "recipe_id": "ionic_gate",
+      "ingredients": ["cationic_defender", "anionic_repulsor"],
+      "result_tower_id": "beta_sheet_fortifier",
+      "max_distance_cells": 1.6,
+      "heat_credit_delta": 2,
+      "summary": "Charged pair cross-links into a rigid β-sheet wall."
+    },
+    {
+      "recipe_id": "core_stabilizer",
+      "ingredients": ["hydrophobic_anchor", "molecular_chaperone"],
+      "result_tower_id": "alpha_helix_pulsar",
+      "max_distance_cells": 1.8,
+      "heat_credit_delta": 4,
+      "summary": "Core residue plus chaperone yields high-energy helix pulsar."
+    },
+    {
+      "recipe_id": "turn_hydrator",
+      "ingredients": ["proline_hinge", "polar_hydrator"],
+      "result_tower_id": "molecular_chaperone",
+      "max_distance_cells": 1.8,
+      "heat_credit_delta": -3,
+      "summary": "Turn scaffold with hydrator anneals into a cooling chaperone."
+    }
+  ]
+}
