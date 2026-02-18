@@ -1,7 +1,6 @@
-# GODOT 4.6.1 STRICT – MOBILE UI v0.00.7
+# GODOT 4.6.1 STRICT – SURGICAL FIX v0.00.9.3 – NO CLASS_NAME + RENAMED SHAPE
 extends Control
 
-class_name TowerSelectionPanel
 
 signal tower_card_pressed(selection: Dictionary)
 signal tower_card_long_pressed(selection: Dictionary)
@@ -15,7 +14,7 @@ var active_press_id: String = ""
 var press_elapsed: float = 0.0
 var long_press_fired: bool = false
 
-@onready var card_container: HBoxContainer = %CardContainer
+@onready var card_container: BoxContainer = %CardContainer
 
 func _ready() -> void:
 	module = TowerSelectionUI.new()
@@ -40,10 +39,23 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	card.size_flags_horizontal = Control.SIZE_FILL
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
+	var geometric_shape: StringName = StringName(str(Dictionary(entry.get("visuals", {})).get("shape", "circle")))
+	var icon: Label = Label.new()
+	icon.text = _shape_glyph(str(geometric_shape))
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
+	vbox.add_child(icon)
 	var title: Label = Label.new()
 	title.text = str(entry.get("display_name", "Tower"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
+	var multi: Label = Label.new()
+	multi.text = "%s\n%s" % [str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
+	multi.modulate = Color(0.84, 0.9, 1.0, 1.0)
+	multi.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	multi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(multi)
 	var role: Label = Label.new()
 	role.text = str(entry.get("folding_role", ""))
 	role.modulate = Color(0.75, 0.85, 1.0, 1.0)
@@ -52,6 +64,18 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	stats.text = "Cost %d | Heat %.2f | Tol %.2f" % [int(entry.get("build_cost", 0)), float(entry.get("heat_gen_rate", 0.0)), float(entry.get("heat_tolerance_value", 0.0))]
 	stats.modulate = Color(0.85, 0.95, 0.82, 1.0)
 	vbox.add_child(stats)
+	var heat_bar: ProgressBar = ProgressBar.new()
+	heat_bar.min_value = 0.0
+	heat_bar.max_value = 1.5
+	heat_bar.value = float(entry.get("heat_gen_rate", 0.0))
+	heat_bar.show_percentage = false
+	vbox.add_child(heat_bar)
+	var tolerance_bar: ProgressBar = ProgressBar.new()
+	tolerance_bar.min_value = 0.0
+	tolerance_bar.max_value = 1.5
+	tolerance_bar.value = float(entry.get("heat_tolerance_value", 0.0))
+	tolerance_bar.show_percentage = false
+	vbox.add_child(tolerance_bar)
 	if _is_recommended(entry, global_heat_ratio):
 		var badge: Label = Label.new()
 		badge.text = "Recommended"
@@ -62,6 +86,27 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	)
 	card_container.add_child(card)
 	cards[str(entry.get("tower_id", ""))] = card
+
+func _shape_glyph(shape: String) -> String:
+	match shape:
+		"circle":
+			return "●"
+		"rounded_square":
+			return "▣"
+		"triangle_up":
+			return "▲"
+		"triangle_down":
+			return "▼"
+		"diamond":
+			return "◆"
+		"oval":
+			return "⬭"
+		"rectangle":
+			return "▬"
+		"pentagon":
+			return "⬟"
+		_:
+			return "◉"
 
 func _is_recommended(entry: Dictionary, global_heat_ratio: float) -> bool:
 	var heat_gen: float = float(entry.get("heat_gen_rate", 0.0))

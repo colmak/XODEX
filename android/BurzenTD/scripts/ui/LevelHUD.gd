@@ -15,7 +15,7 @@ signal tower_info_requested(selection: Dictionary)
 @onready var status_label: Label = %StatusLabel
 @onready var pause_button: Button = %PauseButton
 @onready var speed_button: Button = %SpeedButton
-@onready var tower_panel: TowerSelectionPanel = %TowerSelectionPanel
+@onready var tower_panel: Node = %TowerSelectionPanel
 @onready var tooltip_panel: PanelContainer = %TooltipPanel
 @onready var tooltip_label: Label = %TooltipLabel
 
@@ -25,12 +25,12 @@ const SPEEDS: Array[float] = [1.0, 2.0, 3.0]
 func _ready() -> void:
 	pause_button.pressed.connect(func() -> void: emit_signal("pause_pressed"))
 	speed_button.pressed.connect(_on_speed_pressed)
-	tower_panel.tower_card_pressed.connect(func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
-	tower_panel.tower_card_long_pressed.connect(func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
+	tower_panel.connect("tower_card_pressed", func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
+	tower_panel.connect("tower_card_long_pressed", func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
 	tooltip_panel.visible = false
 
 func configure_towers(global_heat_ratio: float, unlocked_towers: Array[String]) -> void:
-	tower_panel.configure(global_heat_ratio, unlocked_towers)
+	tower_panel.call("configure", global_heat_ratio, unlocked_towers)
 
 func set_header(wave: int, wave_total: int, lives: int, heat_ratio: float, total_damage: float) -> void:
 	wave_label.text = "Wave %d/%d" % [wave, wave_total]
