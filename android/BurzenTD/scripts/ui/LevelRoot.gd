@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – LEVEL 3 FIX v0.01.0.1
+# GODOT 4.6.1 STRICT – MOBILE HUD v0.02.0
 extends CanvasLayer
 
 class_name LevelRoot
@@ -12,119 +12,143 @@ signal settings_pressed
 signal settings_changed(user_settings: Dictionary)
 signal start_wave_pressed
 signal tower_upgrade_requested(tower_index: int)
+signal tower_sell_requested(tower_index: int, sell_value: int)
 
 const SPEEDS: Array[float] = [1.0, 2.0, 3.0]
-const INFO_AUTO_COLLAPSE_SECONDS: float = 3.0
-const USER_SETTINGS_PATH: String = "user://user_settings.json"
+const INFO_AUTO_COLLAPSE_SECONDS: float = 4.0
+const SAFE_MARGIN_FALLBACK: int = 18
 
 var speed_mode: int = 0
 var global_heat_ratio: float = 0.0
 var info_visible_for: float = 0.0
-var prep_overlay_dismissable: bool = true
+var current_tower_index: int = -1
+var pending_sell_confirm: bool = false
+var current_sell_value: int = 0
 var user_settings: Dictionary = {
-	"tower_viz": "Geometric",
 	"show_grid_highlights": true,
-	"language": "EN",
 	"high_contrast_mode": false,
 	"color_scheme": "Default Dark Lab",
 	"heat_gradient_style": "Standard",
 	"grid_opacity": 0.25,
 }
 
+@onready var safe_area_root: Control = %SafeAreaRoot
 @onready var top_section: Control = %TopSection
-@onready var tower_selection_panel: Control = %TowerSelectionPanel
 @onready var wave_label: Label = %WaveLabel
-@onready var heat_label: Label = %HeatLabel
-@onready var heat_income_label: Label = %HeatIncomeLabel
-@onready var reward_label: Label = %RewardLabel
 @onready var lives_label: Label = %LivesLabel
+@onready var credits_label: Label = %CreditsLabel
 @onready var status_label: Label = %StatusLabel
-@onready var pause_button: Button = %PauseButton
+@onready var wave_preview_panel: PanelContainer = %WavePreviewPanel
+@onready var wave_preview_label: RichTextLabel = %WavePreviewLabel
+@onready var wave_preview_toggle_button: Button = %WavePreviewToggleButton
+@onready var tower_selection_panel: Control = %TowerSelectionPanel
+@onready var place_tower_button: Button = %PlaceTowerButton
+@onready var upgrade_info_button: Button = %UpgradeInfoButton
+@onready var sell_button: Button = %SellButton
 @onready var speed_button: Button = %SpeedButton
-@onready var retry_button: Button = %RetryButton
-@onready var settings_button: Button = %SettingsButton
-@onready var prep_overlay: PanelContainer = %PrepOverlay
-@onready var overlay_center: CenterContainer = %OverlayCenter
-@onready var overlay_close_button: BaseButton = %OverlayCloseButton
-@onready var overlay_dismiss_layer: Control = %OverlayDismissLayer
-@onready var start_wave_button: Button = %StartWaveButton
-@onready var timeline_label: Label = %TimelineLabel
+@onready var pause_button: Button = %PauseButton
 @onready var tower_info_panel: PanelContainer = %TowerInfoPanel
 @onready var tower_info_label: RichTextLabel = %TowerInfoLabel
 @onready var tower_upgrade_button: Button = %TowerUpgradeButton
-@onready var settings_panel: PanelContainer = %SettingsPanel
-@onready var viz_option_button: OptionButton = %VizOptionButton
-@onready var grid_highlights_toggle: CheckButton = %GridHighlightsToggle
-@onready var language_option_button: OptionButton = %LanguageOptionButton
-@onready var settings_close_button: Button = %SettingsCloseButton
-@onready var high_contrast_toggle: CheckButton = %HighContrastToggle
-@onready var color_scheme_option: OptionButton = %ColorSchemeOptionButton
-@onready var heat_gradient_option: OptionButton = %HeatGradientOptionButton
-@onready var grid_opacity_slider: HSlider = %GridOpacitySlider
-
-var current_tower_index: int = -1
+@onready var tower_sell_button: Button = %TowerSellButton
+@onready var pause_modal: PanelContainer = %PauseModal
+@onready var resume_button: Button = %ResumeButton
+@onready var settings_button: Button = %SettingsButton
+@onready var quit_button: Button = %QuitButton
 
 func _ready() -> void:
-	pause_button.pressed.connect(func() -> void: emit_signal("pause_pressed"))
+	pause_button.pressed.connect(_on_pause_pressed)
 	speed_button.pressed.connect(_on_speed_pressed)
-	retry_button.pressed.connect(func() -> void: emit_signal("retry_pressed"))
-	settings_button.pressed.connect(_on_settings_pressed)
-	start_wave_button.pressed.connect(func() -> void: emit_signal("start_wave_pressed"))
-	overlay_close_button.pressed.connect(_dismiss_prep_overlay)
-	overlay_dismiss_layer.gui_input.connect(_on_overlay_dismiss_layer_input)
+	place_tower_button.pressed.connect(_on_place_tower_pressed)
+	upgrade_info_button.pressed.connect(_on_upgrade_info_pressed)
+	sell_button.pressed.connect(_on_sell_pressed)
 	tower_upgrade_button.pressed.connect(_on_upgrade_pressed)
+	tower_sell_button.pressed.connect(_on_sell_pressed)
+	wave_preview_toggle_button.pressed.connect(_on_toggle_wave_preview)
+	resume_button.pressed.connect(_on_pause_pressed)
+	settings_button.pressed.connect(func() -> void: emit_signal("settings_pressed"))
+	quit_button.pressed.connect(func() -> void: emit_signal("retry_pressed"))
 	tower_selection_panel.connect("tower_card_pressed", func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
 	tower_selection_panel.connect("tower_card_long_pressed", func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
+	for button: Button in [place_tower_button, upgrade_info_button, sell_button, speed_button, pause_button, tower_upgrade_button, tower_sell_button, resume_button, settings_button, quit_button, wave_preview_toggle_button]:
+		button.button_down.connect(func() -> void: _pulse_button(button, 0.94))
+		button.button_up.connect(func() -> void: _pulse_button(button, 1.0))
 	tower_info_panel.visible = false
-	_setup_settings_ui()
-	_load_user_settings()
-	prep_overlay.modulate = Color(0.04, 0.1, 0.16, 0.65)
-	_apply_user_settings_to_ui()
+	pause_modal.visible = false
+	_apply_safe_area_layout()
+	emit_signal("settings_changed", get_user_settings())
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_SIZE_CHANGED:
+		_apply_safe_area_layout()
 
 func _process(delta: float) -> void:
-	if not tower_info_panel.visible:
-		return
-	info_visible_for += delta
-	if info_visible_for >= INFO_AUTO_COLLAPSE_SECONDS:
-		hide_tower_info()
+	if tower_info_panel.visible:
+		info_visible_for += delta
+		if info_visible_for >= INFO_AUTO_COLLAPSE_SECONDS:
+			hide_tower_info()
+
+func _pulse_button(button: Button, target_scale: float) -> void:
+	var tween: Tween = create_tween()
+	tween.tween_property(button, "scale", Vector2.ONE * target_scale, 0.08)
+
+func _apply_safe_area_layout() -> void:
+	var fallback: Vector2 = Vector2(SAFE_MARGIN_FALLBACK, SAFE_MARGIN_FALLBACK)
+	var insets: Vector4 = Vector4(fallback.x, fallback.y, fallback.x, fallback.y)
+	if DisplayServer.has_method("get_display_safe_area"):
+		var safe_rect_variant: Variant = DisplayServer.call("get_display_safe_area")
+		if safe_rect_variant is Rect2i:
+			var safe_rect: Rect2i = safe_rect_variant
+			var viewport_rect: Rect2 = get_viewport().get_visible_rect()
+			insets.x = maxf(float(safe_rect.position.x), fallback.x)
+			insets.y = maxf(float(safe_rect.position.y), fallback.y)
+			insets.z = maxf(viewport_rect.size.x - float(safe_rect.end.x), fallback.x)
+			insets.w = maxf(viewport_rect.size.y - float(safe_rect.end.y), fallback.y)
+	safe_area_root.offset_left = insets.x
+	safe_area_root.offset_top = insets.y
+	safe_area_root.offset_right = -insets.z
+	safe_area_root.offset_bottom = -insets.w
 
 func get_arena_rect() -> Rect2:
 	return top_section.get_global_rect()
 
+func get_user_settings() -> Dictionary:
+	return user_settings.duplicate(true)
+
 func configure_towers(next_heat_ratio: float, unlocked_towers: Array[String]) -> void:
 	global_heat_ratio = next_heat_ratio
-	tower_selection_panel.call("set_language", str(user_settings.get("language", "EN")))
 	tower_selection_panel.call("configure", next_heat_ratio, unlocked_towers)
 
 func set_metrics(wave: int, wave_total: int, enemies_alive: int, enemies_total: int, lives: int, heat_ratio: float) -> void:
 	global_heat_ratio = heat_ratio
-	wave_label.text = "Wave %d/%d | %d/%d enemies" % [wave, wave_total, enemies_alive, enemies_total]
-	heat_label.text = "Heat %d°C" % int(round(heat_ratio * 100.0))
-	heat_income_label.text = "+%.1f/tick" % maxf(0.2, 1.2 - heat_ratio * 0.6)
-	reward_label.text = "Next: +%d Heat" % (20 + wave * 5)
-	lives_label.text = "Leaks %d/10" % max(lives, 0)
+	var defeated: int = maxi(enemies_total - enemies_alive, 0)
+	wave_label.text = "🌊 %d/%d  •  %d/%d" % [wave, wave_total, defeated, enemies_total]
+	lives_label.text = "♥ %d" % max(lives, 0)
+	var heat_budget: int = int(round(100.0 * heat_ratio))
+	credits_label.text = "⚗ %d" % max(0, 100 - heat_budget)
 	if lives <= 2:
-		lives_label.modulate = Color(1.0, 0.4 + 0.2 * sin(Time.get_ticks_msec() * 0.012), 0.4, 1.0)
+		lives_label.modulate = Color(1.0, 0.5, 0.5)
 	else:
-		lives_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		lives_label.modulate = Color(1.0, 1.0, 1.0)
 
 func set_wave_preview(icons_text: String, forecast: String) -> void:
-	timeline_label.text = "Preview: %s\n%s" % [icons_text, forecast]
+	wave_preview_label.text = "[b]Next Wave[/b]\n%s\n%s" % [icons_text, forecast]
 
 func set_status(message: String) -> void:
 	status_label.text = message
 
 func configure_pre_wave_overlay(show_overlay: bool, dismissable: bool) -> void:
-	prep_overlay_dismissable = dismissable
-	set_pre_wave_visible(show_overlay)
-	overlay_close_button.visible = dismissable
-	overlay_dismiss_layer.mouse_filter = Control.MOUSE_FILTER_STOP if dismissable else Control.MOUSE_FILTER_IGNORE
+	if show_overlay:
+		pause_modal.visible = true
+		resume_button.visible = dismissable
 
 func set_pre_wave_visible(visible_state: bool) -> void:
-	prep_overlay.visible = visible_state
+	pause_modal.visible = visible_state
 
 func show_tower_info(tower_index: int, tower_data: Dictionary) -> void:
 	current_tower_index = tower_index
+	pending_sell_confirm = false
+	current_sell_value = int(round(float(tower_data.get("build_cost", 18)) * 0.7))
 	var heat_gen: float = float(tower_data.get("heat_gen_rate", 0.0))
 	var title: String = str(tower_data.get("display_name", tower_data.get("tower_id", "Residue")))
 	var pulse: String = str(tower_data.get("folding_role", "Pulse"))
@@ -132,18 +156,45 @@ func show_tower_info(tower_index: int, tower_data: Dictionary) -> void:
 	var fire_rate: float = 1.0 + heat_gen * 0.25
 	var range: float = float(tower_data.get("radius", 180.0))
 	var upgrade_cost: int = int(round(16.0 + heat_gen * 8.0))
-	tower_upgrade_button.text = "+12 DPS | +10%% Speed | Cost: %d°C" % upgrade_cost
-	tower_info_label.text = "[b]%s[/b]\nDPS: %.1f\nFire Rate: %.2f\nHeat Gen: %.2f\nRange: %.0f\nSpecial: %s" % [title, dps, fire_rate, heat_gen, range, pulse]
+	tower_upgrade_button.text = "Upgrade (+12 DPS) • %d⚗" % upgrade_cost
+	tower_sell_button.text = "Sell • %d⚗" % current_sell_value
+	tower_info_label.text = "[b]%s[/b]\nDMG 47 | Rate %.2f | Range %.0f\nDPS %.1f\nEffect: %s\nPath A: Stability (+Range)\nPath B: Burst (+Rate)" % [title, fire_rate, range, dps, pulse]
 	tower_info_panel.visible = true
 	info_visible_for = 0.0
 
 func hide_tower_info() -> void:
 	tower_info_panel.visible = false
 	current_tower_index = -1
+	pending_sell_confirm = false
 	info_visible_for = 0.0
 
-func get_user_settings() -> Dictionary:
-	return user_settings.duplicate(true)
+func _on_pause_pressed() -> void:
+	pause_modal.visible = not pause_modal.visible
+	emit_signal("pause_pressed")
+
+func _on_place_tower_pressed() -> void:
+	tower_selection_panel.call("set_collapse_highlight", true)
+	set_status("Choose a tower card, then drag on map to place.")
+
+func _on_upgrade_info_pressed() -> void:
+	if current_tower_index >= 0:
+		_on_upgrade_pressed()
+	else:
+		set_status("Tap a placed tower to inspect upgrade paths.")
+
+func _on_sell_pressed() -> void:
+	if current_tower_index < 0:
+		set_status("Tap a tower first to sell it.")
+		return
+	if not pending_sell_confirm:
+		pending_sell_confirm = true
+		set_status("Tap Sell again to confirm (%d⚗ refund)." % current_sell_value)
+		tower_sell_button.modulate = Color(1.0, 0.55, 0.55)
+		return
+	tower_sell_button.modulate = Color(1.0, 1.0, 1.0)
+	pending_sell_confirm = false
+	emit_signal("tower_sell_requested", current_tower_index, current_sell_value)
+	hide_tower_info()
 
 func _on_upgrade_pressed() -> void:
 	if current_tower_index < 0:
@@ -152,116 +203,11 @@ func _on_upgrade_pressed() -> void:
 	info_visible_for = 0.0
 
 func _on_speed_pressed() -> void:
-	if not is_inside_tree() or get_tree().paused:
-		return
 	speed_mode = (speed_mode + 1) % SPEEDS.size()
 	var speed: float = SPEEDS[speed_mode]
-	speed_button.text = "×%.0f" % speed
+	speed_button.text = "x%.0f" % speed
 	emit_signal("speed_changed", speed)
 
-func _on_settings_pressed() -> void:
-	emit_signal("settings_pressed")
-	settings_panel.visible = not settings_panel.visible
-
-func _on_overlay_dismiss_layer_input(event: InputEvent) -> void:
-	if not prep_overlay.visible or not prep_overlay_dismissable:
-		return
-	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event
-		if mouse_event.pressed and not overlay_center.get_global_rect().has_point(mouse_event.position):
-			_dismiss_prep_overlay()
-	if event is InputEventScreenTouch:
-		var touch: InputEventScreenTouch = event
-		if touch.pressed and not overlay_center.get_global_rect().has_point(touch.position):
-			_dismiss_prep_overlay()
-
-func _dismiss_prep_overlay() -> void:
-	if not prep_overlay_dismissable:
-		return
-	prep_overlay.visible = false
-	emit_signal("start_wave_pressed")
-
-func _setup_settings_ui() -> void:
-	viz_option_button.clear()
-	viz_option_button.add_item("Geometric")
-	viz_option_button.add_item("Realistic PDB")
-	viz_option_button.add_item("Custom")
-	language_option_button.clear()
-	language_option_button.add_item("EN")
-	language_option_button.add_item("CN")
-	language_option_button.add_item("RU")
-	color_scheme_option.clear()
-	color_scheme_option.add_item("Default Dark Lab")
-	color_scheme_option.add_item("High Viz")
-	heat_gradient_option.clear()
-	heat_gradient_option.add_item("Standard")
-	heat_gradient_option.add_item("Colorblind")
-	grid_opacity_slider.min_value = 0.1
-	grid_opacity_slider.max_value = 1.0
-	grid_opacity_slider.step = 0.05
-	viz_option_button.item_selected.connect(_on_settings_field_changed)
-	grid_highlights_toggle.toggled.connect(func(_pressed: bool) -> void: _on_settings_field_changed(0))
-	language_option_button.item_selected.connect(_on_settings_field_changed)
-	high_contrast_toggle.toggled.connect(func(_pressed: bool) -> void: _on_settings_field_changed(0))
-	color_scheme_option.item_selected.connect(_on_settings_field_changed)
-	heat_gradient_option.item_selected.connect(_on_settings_field_changed)
-	grid_opacity_slider.value_changed.connect(func(_value: float) -> void: _on_settings_field_changed(0))
-	settings_close_button.pressed.connect(func() -> void: settings_panel.visible = false)
-
-func _on_settings_field_changed(_index: int) -> void:
-	user_settings["tower_viz"] = viz_option_button.get_item_text(viz_option_button.selected)
-	user_settings["show_grid_highlights"] = grid_highlights_toggle.button_pressed
-	user_settings["language"] = language_option_button.get_item_text(language_option_button.selected)
-	user_settings["high_contrast_mode"] = high_contrast_toggle.button_pressed
-	user_settings["color_scheme"] = color_scheme_option.get_item_text(color_scheme_option.selected)
-	user_settings["heat_gradient_style"] = heat_gradient_option.get_item_text(heat_gradient_option.selected)
-	user_settings["grid_opacity"] = grid_opacity_slider.value
-	_save_user_settings()
-	emit_signal("settings_changed", get_user_settings())
-
-func _load_user_settings() -> void:
-	if not FileAccess.file_exists(USER_SETTINGS_PATH):
-		return
-	var settings_file: FileAccess = FileAccess.open(USER_SETTINGS_PATH, FileAccess.READ)
-	if settings_file == null:
-		return
-	var parsed: Variant = JSON.parse_string(settings_file.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return
-	user_settings = user_settings.merged(Dictionary(parsed), true)
-
-func _save_user_settings() -> void:
-	var settings_file: FileAccess = FileAccess.open(USER_SETTINGS_PATH, FileAccess.WRITE)
-	if settings_file == null:
-		return
-	settings_file.store_string(JSON.stringify(user_settings, "	"))
-
-func _apply_user_settings_to_ui() -> void:
-	var viz_index: int = 0
-	for i: int in range(viz_option_button.item_count):
-		if viz_option_button.get_item_text(i) == str(user_settings.get("tower_viz", "Geometric")):
-			viz_index = i
-			break
-	viz_option_button.select(viz_index)
-	grid_highlights_toggle.button_pressed = bool(user_settings.get("show_grid_highlights", true))
-	var lang_index: int = 0
-	for i: int in range(language_option_button.item_count):
-		if language_option_button.get_item_text(i) == str(user_settings.get("language", "EN")):
-			lang_index = i
-			break
-	language_option_button.select(lang_index)
-	high_contrast_toggle.button_pressed = bool(user_settings.get("high_contrast_mode", false))
-	var scheme_index: int = 0
-	for i: int in range(color_scheme_option.item_count):
-		if color_scheme_option.get_item_text(i) == str(user_settings.get("color_scheme", "Default Dark Lab")):
-			scheme_index = i
-			break
-	color_scheme_option.select(scheme_index)
-	var heat_style_index: int = 0
-	for i: int in range(heat_gradient_option.item_count):
-		if heat_gradient_option.get_item_text(i) == str(user_settings.get("heat_gradient_style", "Standard")):
-			heat_style_index = i
-			break
-	heat_gradient_option.select(heat_style_index)
-	grid_opacity_slider.value = clampf(float(user_settings.get("grid_opacity", 0.25)), 0.1, 1.0)
-	emit_signal("settings_changed", get_user_settings())
+func _on_toggle_wave_preview() -> void:
+	wave_preview_panel.visible = not wave_preview_panel.visible
+	wave_preview_toggle_button.text = "Wave ▸" if not wave_preview_panel.visible else "Wave ▾"
