@@ -6,74 +6,78 @@
 [node name="LevelRoot" type="CanvasLayer"]
 script = ExtResource("1_root")
 
-[node name="TopSection" type="PanelContainer" parent="."]
+[node name="SafeAreaRoot" type="Control" parent="."]
 unique_name_in_owner = true
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_bottom = 1330.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopSection" type="PanelContainer" parent="SafeAreaRoot"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -250.0
+grow_horizontal = 2
+grow_vertical = 2
 modulate = Color(0.04, 0.1, 0.16, 1)
 
-[node name="TopBar" type="PanelContainer" parent="TopSection"]
-layout_mode = 1
+[node name="HUD_TopBar" type="PanelContainer" parent="SafeAreaRoot"]
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 120.0
+offset_bottom = 86.0
 grow_horizontal = 2
 
-[node name="TopInfo" type="HBoxContainer" parent="TopSection/TopBar"]
+[node name="TopInfo" type="HBoxContainer" parent="SafeAreaRoot/HUD_TopBar"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
+offset_left = 12.0
 offset_top = 8.0
-offset_right = -16.0
+offset_right = -12.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
-[node name="WaveLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+[node name="WaveLabel" type="Label" parent="SafeAreaRoot/HUD_TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Wave 1/4 | 0/20 enemies"
+text = "🌊 1/3 • 0/6"
 
-[node name="HeatLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+[node name="LivesLabel" type="Label" parent="SafeAreaRoot/HUD_TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Heat 100°C"
+text = "♥ 3"
 
-[node name="HeatIncomeLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+[node name="CreditsLabel" type="Label" parent="SafeAreaRoot/HUD_TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "+0.8/tick"
+text = "⚗ 100"
 
-[node name="RewardLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+[node name="WavePreviewToggleButton" type="Button" parent="SafeAreaRoot/HUD_TopBar/TopInfo"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(128, 54)
 layout_mode = 2
-text = "Next: +25 Heat"
+text = "Wave ▾"
 
-[node name="LivesLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+[node name="WavePreviewPanel" type="PanelContainer" parent="SafeAreaRoot"]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Leaks 3/10"
-
-[node name="TimelinePanel" type="PanelContainer" parent="TopSection"]
-layout_mode = 1
 anchors_preset = 9
 anchor_left = 1.0
-anchor_top = 0.5
+anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -120.0
-offset_right = -16.0
-offset_bottom = 120.0
-modulate = Color(1, 1, 1, 0.82)
+anchor_bottom = 0.0
+offset_left = -300.0
+offset_top = 92.0
+offset_right = -12.0
+offset_bottom = 250.0
 
-[node name="TimelineLabel" type="Label" parent="TopSection/TimelinePanel"]
+[node name="WavePreviewLabel" type="RichTextLabel" parent="SafeAreaRoot/WavePreviewPanel"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -85,25 +89,25 @@ offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Preview: ▲ ● ◆\nHot wave incoming"
-autowrap_mode = 3
+bbcode_enabled = true
+text = "[b]Next Wave[/b]\n▲ ● ◆\nReward +25"
+fit_content = true
+scroll_active = false
 
-[node name="TowerInfoPanel" type="PanelContainer" parent="TopSection"]
+[node name="TowerInfoPanel" type="PanelContainer" parent="SafeAreaRoot"]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 9
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -390.0
-offset_top = -250.0
-offset_right = -12.0
-offset_bottom = -12.0
-modulate = Color(1, 1, 1, 0.82)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -225.0
+offset_top = -160.0
+offset_right = 225.0
+offset_bottom = 160.0
 
-[node name="TowerInfoVBox" type="VBoxContainer" parent="TopSection/TowerInfoPanel"]
+[node name="TowerInfoVBox" type="VBoxContainer" parent="SafeAreaRoot/TowerInfoPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -116,30 +120,36 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 8
 
-[node name="TowerInfoLabel" type="RichTextLabel" parent="TopSection/TowerInfoPanel/TowerInfoVBox"]
+[node name="TowerInfoLabel" type="RichTextLabel" parent="SafeAreaRoot/TowerInfoPanel/TowerInfoVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
-text = ""
+fit_content = true
 
-[node name="TowerUpgradeButton" type="Button" parent="TopSection/TowerInfoPanel/TowerInfoVBox"]
+[node name="TowerUpgradeButton" type="Button" parent="SafeAreaRoot/TowerInfoPanel/TowerInfoVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 54)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-text = "+12 DPS | +10% Speed | Cost: 18°C"
+text = "Upgrade"
 
-[node name="BottomSection" type="PanelContainer" parent="."]
+[node name="TowerSellButton" type="Button" parent="SafeAreaRoot/TowerInfoPanel/TowerInfoVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Sell"
+
+[node name="HUD_BottomPanel" type="PanelContainer" parent="SafeAreaRoot"]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -570.0
+offset_top = -240.0
 grow_horizontal = 2
 grow_vertical = 0
-modulate = Color(0.12, 0.23, 0.32, 0.92)
+modulate = Color(0.12, 0.23, 0.32, 0.95)
 
-[node name="BottomVBox" type="VBoxContainer" parent="BottomSection"]
+[node name="BottomVBox" type="VBoxContainer" parent="SafeAreaRoot/HUD_BottomPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -152,220 +162,126 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 8
 
-[node name="TowerSelectionPanel" type="Control" parent="BottomSection/BottomVBox"]
+[node name="TowerSelectionPanel" type="Control" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(0, 130)
 layout_mode = 2
 script = ExtResource("2_tower_panel")
 
-[node name="Header" type="HBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel"]
+[node name="Header" type="HBoxContainer" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/TowerSelectionPanel"]
 layout_mode = 2
 
-[node name="CollapseButton" type="Button" parent="BottomSection/BottomVBox/TowerSelectionPanel/Header"]
+[node name="CollapseButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/TowerSelectionPanel/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(240, 56)
+custom_minimum_size = Vector2(190, 48)
 layout_mode = 2
 text = "▲ Towers"
 
-[node name="Content" type="VBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel"]
+[node name="Content" type="VBoxContainer" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/TowerSelectionPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel/Content"]
+[node name="Scroll" type="ScrollContainer" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/TowerSelectionPanel/Content"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 220)
+custom_minimum_size = Vector2(0, 94)
 horizontal_scroll_mode = 1
 vertical_scroll_mode = 2
 
-[node name="CardContainer" type="HBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel/Content/Scroll"]
+[node name="CardContainer" type="HBoxContainer" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/TowerSelectionPanel/Content/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="StatusLabel" type="Label" parent="BottomSection/BottomVBox"]
+[node name="StatusLabel" type="Label" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Tap a residue card to start placement"
+text = "Tap Place Tower, then choose from carousel."
 autowrap_mode = 3
 
-[node name="MenuRow" type="HBoxContainer" parent="BottomSection/BottomVBox"]
+[node name="HUD_ActionRow" type="HBoxContainer" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="PauseButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
+[node name="PlaceTowerButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/HUD_ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 60)
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
-text = "⏸"
+size_flags_horizontal = 3
+text = "Place"
 
-[node name="SpeedButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
+[node name="UpgradeInfoButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/HUD_ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 60)
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
-text = "×1"
+size_flags_horizontal = 3
+text = "Upgrade"
 
-[node name="RetryButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
+[node name="SellButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/HUD_ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 60)
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
-text = "Retry"
+size_flags_horizontal = 3
+text = "Sell"
 
-[node name="SettingsButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
+[node name="SpeedButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/HUD_ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 60)
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
-text = "⚙"
+size_flags_horizontal = 3
+text = "x1"
 
-[node name="PrepOverlay" type="PanelContainer" parent="."]
+[node name="PauseButton" type="Button" parent="SafeAreaRoot/HUD_BottomPanel/BottomVBox/HUD_ActionRow"]
 unique_name_in_owner = true
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-modulate = Color(1, 1, 1, 0.7)
-
-[node name="OverlayDismissLayer" type="Control" parent="PrepOverlay"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 1
-
-[node name="OverlayCenter" type="CenterContainer" parent="PrepOverlay"]
-unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Pause"
 
-[node name="OverlayPanel" type="PanelContainer" parent="PrepOverlay/OverlayCenter"]
-custom_minimum_size = Vector2(560, 380)
-layout_mode = 2
-
-[node name="OverlayVBox" type="VBoxContainer" parent="PrepOverlay/OverlayCenter/OverlayPanel"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="OverlayCloseButton" type="TextureButton" parent="PrepOverlay/OverlayCenter/OverlayPanel"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 48)
-layout_mode = 1
-anchors_preset = 10
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -54.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = 54.0
-grow_horizontal = 0
-
-
-[node name="OverlayCloseLabel" type="Label" parent="PrepOverlay/OverlayCenter/OverlayPanel/OverlayCloseButton"]
-layout_mode = 0
-offset_left = 15.0
-offset_top = 10.0
-offset_right = 33.0
-offset_bottom = 38.0
-text = "✕"
-
-[node name="PrepTitle" type="Label" parent="PrepOverlay/OverlayCenter/OverlayPanel/OverlayVBox"]
-layout_mode = 2
-horizontal_alignment = 1
-text = "PRE-WAVE DECISION WINDOW\n准备你的蛋白折叠\nПодготовьте белковую укладку"
-
-[node name="StartWaveButton" type="Button" parent="PrepOverlay/OverlayCenter/OverlayPanel/OverlayVBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(450, 60)
-layout_mode = 2
-text = "START FIRST WAVE"
-
-[node name="SettingsPanel" type="PanelContainer" parent="."]
+[node name="PauseModal" type="PanelContainer" parent="SafeAreaRoot"]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 9
-anchor_left = 1.0
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -470.0
-offset_top = -260.0
-offset_right = -20.0
-offset_bottom = 260.0
-grow_vertical = 2
+offset_left = -180.0
+offset_top = -160.0
+offset_right = 180.0
+offset_bottom = 160.0
 
-[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel"]
+[node name="PauseVBox" type="VBoxContainer" parent="SafeAreaRoot/PauseModal"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = -12.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 10
 
-[node name="SettingsTitle" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="PauseTitle" type="Label" parent="SafeAreaRoot/PauseModal/PauseVBox"]
+layout_mode = 2
+text = "Game Paused"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="SafeAreaRoot/PauseModal/PauseVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Resume"
+
+[node name="SettingsButton" type="Button" parent="SafeAreaRoot/PauseModal/PauseVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 text = "Settings"
 
-[node name="VizLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
-text = "Tower Viz"
-
-[node name="VizOptionButton" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
+[node name="QuitButton" type="Button" parent="SafeAreaRoot/PauseModal/PauseVBox"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-
-[node name="GridHighlightsToggle" type="CheckButton" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-button_pressed = true
-text = "Show Highlights"
-
-[node name="LanguageLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
-text = "Language"
-
-[node name="LanguageOptionButton" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="HighContrastToggle" type="CheckButton" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "High Contrast Mode"
-
-[node name="ColorSchemeLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
-text = "Color Scheme"
-
-[node name="ColorSchemeOptionButton" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="HeatGradientLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
-text = "Heat Gradient Style"
-
-[node name="HeatGradientOptionButton" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="GridOpacityLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
-text = "Grid Opacity"
-
-[node name="GridOpacitySlider" type="HSlider" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 0.1
-max_value = 1.0
-step = 0.05
-value = 0.25
-
-[node name="SettingsCloseButton" type="Button" parent="SettingsPanel/SettingsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Close"
+text = "Quit"
