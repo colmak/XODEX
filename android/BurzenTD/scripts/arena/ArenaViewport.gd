@@ -24,6 +24,10 @@ var camera_center: Vector2 = Vector2.ZERO
 var camera_zoom: float = 1.0
 var recommended_spots: PackedVector2Array = PackedVector2Array()
 var show_grid_highlights: bool = true
+var high_contrast_mode: bool = false
+var color_scheme: String = "Default Dark Lab"
+var heat_gradient_style: String = "Standard"
+var grid_opacity: float = 0.25
 
 var cell_size: float = 64.0
 
@@ -55,6 +59,10 @@ func set_recommended_spots(next_spots: PackedVector2Array) -> void:
 
 func apply_user_settings(settings: Dictionary) -> void:
 	show_grid_highlights = bool(settings.get("show_grid_highlights", true))
+	high_contrast_mode = bool(settings.get("high_contrast_mode", false))
+	color_scheme = str(settings.get("color_scheme", "Default Dark Lab"))
+	heat_gradient_style = str(settings.get("heat_gradient_style", "Standard"))
+	grid_opacity = clampf(float(settings.get("grid_opacity", 0.25)), 0.1, 1.0)
 	queue_redraw()
 
 func update_state(next_path: PackedVector2Array, next_towers: Array[Dictionary], next_enemies: Array[Dictionary], next_bonds: Array[Dictionary], next_floating: Array[Dictionary], next_death: Array[Dictionary], next_ghost: Vector2, is_placing: bool, is_valid_placement: bool, heat_delta: int, next_time: float) -> void:
@@ -85,8 +93,13 @@ func _world_to_draw(point: Vector2) -> Vector2:
 	return arena_rect.get_center() + (point - camera_center) * camera_zoom
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color("040713"), true)
-	draw_rect(arena_rect, Color("0a1a2a"), true)
+	var bg_color: Color = Color("0a1a2a")
+	var frame_color: Color = Color("040713")
+	if color_scheme == "High Viz":
+		bg_color = Color("ffffff")
+		frame_color = Color("e6e6e6")
+	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), frame_color, true)
+	draw_rect(arena_rect, bg_color, true)
 	_draw_grid()
 	_sync_river_line()
 	_draw_river_glow()
@@ -96,9 +109,12 @@ func _draw() -> void:
 	_draw_enemies()
 	if placement_active:
 		var g: Vector2 = _world_to_draw(ghost_position)
-		var ghost_color: Color = Color(0.2, 0.95, 0.62, 0.33) if placement_valid else Color(1.0, 0.24, 0.2, 0.33)
+		var ghost_color: Color = Color("32cd32") if placement_valid else Color("ff4500")
+		ghost_color.a = 0.33
 		draw_circle(g, 26.0 * camera_zoom, ghost_color)
-		draw_arc(g, 175.0 * camera_zoom, 0.0, TAU, 56, Color(0.3, 0.95, 1.0, 0.38), 2.0)
+		var cue_color: Color = Color("00ffff")
+		cue_color.a = 0.4
+		draw_arc(g, 175.0 * camera_zoom, 0.0, TAU, 56, cue_color, 2.0)
 		draw_arc(g, 32.0 * camera_zoom, 0.0, TAU, 40, ghost_color, 4.0)
 		var popup_pos: Vector2 = g + Vector2(28.0, -30.0)
 		draw_string(ThemeDB.fallback_font, popup_pos, "%+d°C" % placement_heat_delta, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, ghost_color)
@@ -110,17 +126,21 @@ func _draw_grid() -> void:
 	var cell_h: float = arena_rect.size.y / float(grid_rows)
 	for x: int in range(grid_columns + 1):
 		var px: float = arena_rect.position.x + x * cell_w
-		draw_line(Vector2(px, arena_rect.position.y), Vector2(px, arena_rect.end.y), Color(0.23, 0.65, 0.8, 0.2), 1.0)
+		draw_line(Vector2(px, arena_rect.position.y), Vector2(px, arena_rect.end.y), Color(0.0, 1.0, 1.0, grid_opacity), 1.0)
 	for y: int in range(grid_rows + 1):
 		var py: float = arena_rect.position.y + y * cell_h
-		draw_line(Vector2(arena_rect.position.x, py), Vector2(arena_rect.end.x, py), Color(0.23, 0.65, 0.8, 0.2), 1.0)
+		draw_line(Vector2(arena_rect.position.x, py), Vector2(arena_rect.end.x, py), Color(0.0, 1.0, 1.0, grid_opacity), 1.0)
 	if show_grid_highlights:
 		for point: Vector2 in recommended_spots:
 			var draw_point: Vector2 = _world_to_draw(point)
 			var pulse: float = 0.5 + 0.5 * sin(sim_time * 2.2 + point.x * 0.01)
-			var spot_color: Color = Color(0.4, 1.0, 0.45, 0.25 + pulse * 0.3)
+			var fill_color: Color = Color("ffd700")
+			fill_color.a = 0.2 + pulse * 0.1
+			draw_rect(Rect2(draw_point - Vector2(cell_w * 0.45, cell_h * 0.45), Vector2(cell_w * 0.9, cell_h * 0.9)), fill_color, true)
+			var spot_color: Color = Color("32cd32")
+			spot_color.a = 0.35 + pulse * 0.45
 			draw_rect(Rect2(draw_point - Vector2(cell_w * 0.48, cell_h * 0.48), Vector2(cell_w * 0.96, cell_h * 0.96)), spot_color, false, 2.0)
-			draw_string(ThemeDB.fallback_font, draw_point + Vector2(-58.0, -8.0), "Optimal: β-sheet potential", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.8, 1.0, 0.8, 0.55))
+			draw_string(ThemeDB.fallback_font, draw_point + Vector2(-68.0, -8.0), "Good spot: β-sheet barrier", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("e0e0e0"))
 
 func _update_cell_size() -> void:
 	cell_size = arena_rect.size.x / maxf(float(grid_columns), 1.0)
@@ -143,7 +163,9 @@ func _draw_river_glow() -> void:
 	var transformed: PackedVector2Array = PackedVector2Array()
 	for point: Vector2 in path_points:
 		transformed.append(_world_to_draw(point))
-	draw_polyline(transformed, Color(0.61, 0.92, 1.0, 0.45), 14.0 * camera_zoom, true)
+	var glow_color: Color = Color("00bfff")
+	glow_color.a = 0.78
+	draw_polyline(transformed, glow_color, 14.0 * camera_zoom, true)
 
 func _draw_spawn_pores() -> void:
 	if path_points.is_empty():
@@ -165,7 +187,14 @@ func _draw_towers() -> void:
 		var p: Vector2 = _world_to_draw(Vector2(t.get("pos", Vector2.ZERO)))
 		var thermal: Dictionary = Dictionary(t.get("thermal", {}))
 		var heat_ratio: float = clampf(float(thermal.get("heat", 0.0)) / maxf(float(thermal.get("capacity", 100.0)), 0.001), 0.0, 1.0)
-		var base: Color = Color(0.2 + heat_ratio * 0.8, 0.5 + (1.0 - heat_ratio) * 0.35, 1.0 - heat_ratio * 0.65, 1.0)
+		var low_color: Color = Color("ffd700")
+		var mid_color: Color = Color("ff8c00")
+		var high_color: Color = Color("ff4500")
+		if heat_gradient_style == "Colorblind":
+			high_color = Color("4b0082")
+		var base: Color = low_color.lerp(mid_color, clampf(heat_ratio * 1.2, 0.0, 1.0))
+		if heat_ratio > 0.5:
+			base = mid_color.lerp(high_color, clampf((heat_ratio - 0.5) * 2.0, 0.0, 1.0))
 		draw_circle(p, 26.0 * camera_zoom, base)
 		var target: Variant = t.get("last_target", null)
 		if target != null:

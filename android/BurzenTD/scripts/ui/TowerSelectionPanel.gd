@@ -7,6 +7,7 @@ signal tower_card_long_pressed(selection: Dictionary)
 
 const LONG_PRESS_SECONDS: float = 0.45
 const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
+const TOWER_DEFINITIONS_PATH: String = "res://data/towers/tower_definitions.json"
 const TOWER_ICON_SEARCH_PATHS: Array[String] = [
 	"res://assets/towers/%s_geometric.png",
 	"res://assets/towers/geometric_%s.png",
@@ -19,6 +20,8 @@ var press_elapsed: float = 0.0
 var long_press_fired: bool = false
 var is_collapsed: bool = false
 var language_code: String = "EN"
+var last_global_heat_ratio: float = 0.0
+var last_unlocked_towers: Array[String] = []
 
 @onready var collapse_button: Button = %CollapseButton
 @onready var content: VBoxContainer = %Content
@@ -33,14 +36,21 @@ func _ready() -> void:
 	set_process(true)
 
 func configure(global_heat_ratio: float, unlocked_towers: Array[String]) -> void:
+	last_global_heat_ratio = global_heat_ratio
+	last_unlocked_towers = unlocked_towers.duplicate()
+	_refresh_cards()
+
+func _refresh_cards() -> void:
 	for child: Node in card_container.get_children():
 		child.queue_free()
 	cards.clear()
-	var visible: Array[Dictionary] = module.visible_catalog(global_heat_ratio, unlocked_towers)
+	var visible: Array[Dictionary] = _load_all_tower_definitions()
+	if visible.is_empty():
+		visible = module.visible_catalog(last_global_heat_ratio, last_unlocked_towers)
 	if visible.is_empty():
 		visible = module.catalog
 	for entry: Dictionary in visible:
-		_create_card(entry, global_heat_ratio)
+		_create_card(entry, last_global_heat_ratio)
 
 func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	var card: PanelContainer = PanelContainer.new()
@@ -65,16 +75,13 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 		icon.add_theme_font_size_override("font_size", 38)
 		vbox.add_child(icon)
 	var title: Label = Label.new()
-	title.text = "%s  %s" % [_shape_glyph(shape), _localized_title(entry)]
+	title.text = "%s\n%s\n%s" % [str(entry.get("display_name", "")), str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.add_theme_font_size_override("font_size", 16)
+	title.modulate = Color("e0e0e0")
 	vbox.add_child(title)
-	var multi: Label = Label.new()
-	multi.text = "%s\n%s" % [str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
-	multi.modulate = Color(0.84, 0.9, 1.0, 1.0)
-	multi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	multi.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(multi)
+	card.self_modulate = Color("1e3a52")
 	var role: Label = Label.new()
 	role.text = str(entry.get("folding_role", ""))
 	role.modulate = Color(0.75, 0.85, 1.0, 1.0)
@@ -86,13 +93,13 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	var heat_bar: ProgressBar = ProgressBar.new()
 	heat_bar.min_value = 0.0
 	heat_bar.max_value = 1.5
-	heat_bar.value = float(entry.get("heat_gen_rate", 0.0))
+	heat_bar.value = float(entry.get("tower_heat_gen", entry.get("heat_gen_rate", 0.0)))
 	heat_bar.show_percentage = false
 	vbox.add_child(heat_bar)
 	var tolerance_bar: ProgressBar = ProgressBar.new()
 	tolerance_bar.min_value = 0.0
 	tolerance_bar.max_value = 1.5
-	tolerance_bar.value = float(entry.get("heat_tolerance_value", 0.0))
+	tolerance_bar.value = float(entry.get("tower_heat_tol", entry.get("heat_tolerance_value", 0.0)))
 	tolerance_bar.show_percentage = false
 	vbox.add_child(tolerance_bar)
 	card.tooltip_text = str(entry.get("tooltip", ""))
@@ -169,6 +176,8 @@ func _set_collapsed(next_collapsed: bool) -> void:
 	is_collapsed = next_collapsed
 	content.visible = not is_collapsed
 	collapse_button.text = "▼ Towers" if is_collapsed else "▲ Towers"
+	if not is_collapsed:
+		_refresh_cards()
 
 func set_collapse_highlight(enabled: bool) -> void:
 	if enabled:
@@ -192,3 +201,21 @@ func _resolve_tower_texture(tower_id: String) -> Texture2D:
 		if ResourceLoader.exists(icon_path):
 			return load(icon_path) as Texture2D
 	return null
+
+func _load_all_tower_definitions() -> Array[Dictionary]:
+	if not FileAccess.file_exists(TOWER_DEFINITIONS_PATH):
+		return []
+	var file: FileAccess = FileAccess.open(TOWER_DEFINITIONS_PATH, FileAccess.READ)
+	if file == null:
+		return []
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return []
+	var towers_variant: Variant = Dictionary(parsed).get("towers", [])
+	if typeof(towers_variant) != TYPE_ARRAY:
+		return []
+	var loaded: Array[Dictionary] = []
+	for item: Variant in towers_variant:
+		if typeof(item) == TYPE_DICTIONARY:
+			loaded.append(Dictionary(item))
+	return loaded

@@ -60,6 +60,8 @@ var unlocked_towers: Array[String] = []
 var game_speed: float = 1.0
 var placement_valid: bool = false
 var recommended_spots: PackedVector2Array = PackedVector2Array()
+var heat_budget_limit: int = 100
+var heat_spent: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -172,6 +174,8 @@ func _load_level() -> void:
 	spawn_timer = 1.5
 	game_state = "prep"
 	lives = 3
+	heat_budget_limit = int(config.get("heat_budget_limit", 100))
+	heat_spent = 0
 	towers.clear()
 	enemies.clear()
 	floating_texts.clear()
@@ -306,6 +310,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 			two_finger_timer = TWO_FINGER_WINDOW
 		if not placement_controller.is_active():
 			_try_select_tower(event.position)
+			_show_recommendation_tooltip(event.position)
 		return
 	active_touch_count = max(0, active_touch_count - 1)
 	if two_finger_timer >= 0.0:
@@ -332,6 +337,11 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		placement_valid = false
 		level_root.set_status("Too close to river pathway.")
 		return
+	var build_cost: int = int(definition.get("build_cost", 0))
+	if heat_spent + build_cost > heat_budget_limit:
+		placement_valid = false
+		level_root.set_status("Insufficient heat budget for placement.")
+		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	var tower_payload: Dictionary = {
 		"id": towers.size() + 1,
@@ -341,6 +351,7 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		"last_target": null,
 	}.merged(definition, true)
 	towers.append(tower_payload)
+	heat_spent += int(definition.get("build_cost", 0))
 	placement_valid = false
 	TutorialManager.advance_step()
 	level_root.set_status(TutorialManager.current_step_text())
@@ -351,6 +362,10 @@ func _is_valid_placement(pos: Vector2) -> bool:
 	for tower_data: Dictionary in towers:
 		if Vector2(tower_data["pos"]).distance_to(pos) < arena_viewport.cell_size * 0.75:
 			return false
+	var selected: Dictionary = placement_controller.get_selected_tower()
+	var build_cost: int = int(selected.get("build_cost", 0))
+	if heat_spent + build_cost > heat_budget_limit:
+		return false
 	return _distance_to_path(pos) >= PATH_SAFE_DISTANCE
 
 func _on_placement_preview_changed(pos: Vector2) -> void:
@@ -359,7 +374,7 @@ func _on_placement_preview_changed(pos: Vector2) -> void:
 	var selected: Dictionary = placement_controller.get_selected_tower()
 	var heat_delta: int = int(selected.get("build_cost", 0))
 	var placement_state: String = "valid" if placement_valid else "invalid"
-	level_root.set_status("Snap cell %s | Bonds preview active | Heat %+d°C" % [placement_state, heat_delta])
+	level_root.set_status("Snap cell %s | Heat %+d°C | Budget %d/%d" % [placement_state, heat_delta, heat_spent, heat_budget_limit])
 
 
 func _compute_recommended_spots() -> PackedVector2Array:
@@ -398,9 +413,18 @@ func _try_select_tower(point: Vector2) -> void:
 			level_root.show_tower_info(index, t)
 			return
 
+func _show_recommendation_tooltip(point: Vector2) -> void:
+	for spot: Vector2 in recommended_spots:
+		if spot.distance_to(point) <= arena_viewport.cell_size * 0.65:
+			var options: Array[String] = ["Good spot for β-sheet barrier", "Nonpolar core recommended here", "Charged pairing hotspot"]
+			var idx: int = int(absf(spot.x + spot.y)) % options.size()
+			level_root.set_status(options[idx])
+			return
+
 func _handle_mouse_tap(event: InputEventMouseButton) -> void:
 	if event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not placement_controller.is_active():
 		_try_select_tower(event.position)
+		_show_recommendation_tooltip(event.position)
 
 func _upgrade_tower(tower_index: int) -> void:
 	if tower_index < 0 or tower_index >= towers.size():
