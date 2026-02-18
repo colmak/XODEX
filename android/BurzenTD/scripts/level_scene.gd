@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – OPTIMIZED ARENA v0.00.8
+# GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
 extends Node2D
 
 const MAX_TOWERS: int = 12
@@ -57,6 +57,7 @@ var minimum_bonds: int = 2
 var level_id: String = ""
 var unlocked_towers: Array[String] = []
 var game_speed: float = 1.0
+var placement_valid: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -75,11 +76,12 @@ func _ready() -> void:
 	level_root.tower_selected.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
 	level_root.tower_info_requested.connect(func(selection: Dictionary) -> void: level_root.set_status(str(selection.get("tooltip", "No tooltip."))))
 	level_root.start_wave_pressed.connect(_start_first_wave)
+	level_root.tower_upgrade_requested.connect(_upgrade_tower)
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(placement_controller)
 	placement_controller.set_snap_callback(Callable(arena_viewport, "snap_to_grid"))
-	placement_controller.placement_preview_changed.connect(func(pos: Vector2) -> void: ghost_position = arena_viewport.snap_to_grid(pos))
+	placement_controller.placement_preview_changed.connect(_on_placement_preview_changed)
 	placement_controller.placement_committed.connect(_on_placement_committed)
 	complete_screen = LEVEL_COMPLETE_SCENE.instantiate() as LevelCompleteScreen
 	complete_screen.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -123,7 +125,10 @@ func _process(delta: float) -> void:
 	_update_effects(scaled_delta)
 	arena_camera.update_follow(delta, towers, arena_viewport.get_arena_rect())
 	arena_viewport.set_camera(arena_camera.center, arena_camera.zoom_factor)
-	arena_viewport.update_state(path_points, towers, enemies, tower_bonds, floating_texts, death_vfx, ghost_position, placement_controller != null and placement_controller.is_active(), sim_time)
+	var placing: bool = placement_controller != null and placement_controller.is_active()
+	var selected: Dictionary = placement_controller.get_selected_tower() if placing else {}
+	var heat_delta: int = int(selected.get("build_cost", 0))
+	arena_viewport.update_state(path_points, towers, enemies, tower_bonds, floating_texts, death_vfx, ghost_position, placing, placement_valid, heat_delta, sim_time)
 	_update_side_panels()
 
 func _input(event: InputEvent) -> void:
@@ -133,6 +138,8 @@ func _input(event: InputEvent) -> void:
 	placement_controller.handle_input(event)
 	if event is InputEventScreenTouch:
 		_handle_touch(event)
+	if event is InputEventMouseButton:
+		_handle_mouse_tap(event)
 
 func _load_level() -> void:
 	DamageTracker.reset()
@@ -284,6 +291,8 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		active_touch_count += 1
 		if active_touch_count >= 2:
 			two_finger_timer = TWO_FINGER_WINDOW
+		if not placement_controller.is_active():
+			_try_select_tower(event.position)
 		return
 	active_touch_count = max(0, active_touch_count - 1)
 	if two_finger_timer >= 0.0:
@@ -291,18 +300,23 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 
 func _on_placement_committed(selection: Dictionary, pos: Vector2) -> void:
 	var snapped_pos: Vector2 = arena_viewport.snap_to_grid(pos)
-	if not arena_viewport.is_point_inside_arena(snapped_pos):
-		level_root.set_status("Place towers inside the arena only.")
+	if not _is_valid_placement(snapped_pos):
+		level_root.set_status("Invalid placement (arena/path/occupied).")
+		Input.vibrate_handheld(55)
 		return
 	_place_tower(snapped_pos, selection)
+	Input.vibrate_handheld(25)
 
 func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 	if towers.size() >= MAX_TOWERS:
+		placement_valid = false
 		return
 	for tower_data: Dictionary in towers:
 		if Vector2(tower_data["pos"]).distance_to(pos) < arena_viewport.cell_size * 0.75:
+			placement_valid = false
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
+		placement_valid = false
 		level_root.set_status("Too close to river pathway.")
 		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
@@ -314,8 +328,46 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		"last_target": null,
 	}.merged(definition, true)
 	towers.append(tower_payload)
+	placement_valid = false
 	TutorialManager.advance_step()
 	level_root.set_status(TutorialManager.current_step_text())
+
+func _is_valid_placement(pos: Vector2) -> bool:
+	if not arena_viewport.is_point_inside_arena(pos):
+		return false
+	for tower_data: Dictionary in towers:
+		if Vector2(tower_data["pos"]).distance_to(pos) < arena_viewport.cell_size * 0.75:
+			return false
+	return _distance_to_path(pos) >= PATH_SAFE_DISTANCE
+
+func _on_placement_preview_changed(pos: Vector2) -> void:
+	ghost_position = arena_viewport.snap_to_grid(pos)
+	placement_valid = _is_valid_placement(ghost_position)
+	var selected: Dictionary = placement_controller.get_selected_tower()
+	var heat_delta: int = int(selected.get("build_cost", 0))
+	level_root.set_status("Snap cell ready | Bonds preview active | Heat %+d°C" % heat_delta)
+
+func _try_select_tower(point: Vector2) -> void:
+	if not arena_viewport.is_point_inside_arena(point):
+		return
+	for index: int in range(towers.size()):
+		var t: Dictionary = towers[index]
+		if Vector2(t.get("pos", Vector2.ZERO)).distance_to(point) <= arena_viewport.cell_size * 0.75:
+			level_root.show_tower_info(index, t)
+			return
+
+func _handle_mouse_tap(event: InputEventMouseButton) -> void:
+	if event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not placement_controller.is_active():
+		_try_select_tower(event.position)
+
+func _upgrade_tower(tower_index: int) -> void:
+	if tower_index < 0 or tower_index >= towers.size():
+		return
+	var tower_data: Dictionary = towers[tower_index]
+	tower_data["heat_tolerance_value"] = float(tower_data.get("heat_tolerance_value", 0.8)) + 0.1
+	tower_data["heat_gen_rate"] = float(tower_data.get("heat_gen_rate", 0.4)) + 0.1
+	tower_data["radius"] = float(tower_data.get("radius", arena_viewport.cell_size * 2.8)) * 1.05
+	level_root.set_status("Bond formed: helix twist applied (+12 DPS equivalent).")
 
 func _refresh_tower_bonds() -> void:
 	var graph_input: Array[Dictionary] = []
@@ -363,7 +415,9 @@ func _restart_level() -> void:
 func _update_side_panels() -> void:
 	var heat_ratio: float = _average_free_energy()
 	if level_root != null:
-		level_root.set_metrics(min(wave_index, wave_count), wave_count, lives, heat_ratio)
+		var wave_enemy_total: int = max(enemies_per_wave, 1)
+		level_root.set_metrics(min(wave_index, wave_count), wave_count, enemies.size(), wave_enemy_total, lives, heat_ratio)
+		level_root.set_wave_preview("▲ ● ◆", "Hot wave incoming")
 		level_root.configure_towers(heat_ratio, unlocked_towers)
 
 func _update_effects(delta: float) -> void:
@@ -399,6 +453,7 @@ func _show_complete_screen(survived: bool) -> void:
 		"bonds": tower_bonds.size(),
 		"efficiency": efficiency,
 		"summary": "Microscope fold stabilized with high-quality residue clustering.",
+		"loadout": "Loadout ready: choose 4–6 residues for next run.",
 	})
 
 func _toggle_pause() -> void:

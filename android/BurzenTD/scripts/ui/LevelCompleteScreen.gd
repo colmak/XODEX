@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – MOBILE UI v0.00.7
+# GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
 extends Control
 
 class_name LevelCompleteScreen
@@ -27,3 +27,5 @@ func show_results(results: Dictionary) -> void:
 		float(results.get("efficiency", 0.0)),
 		str(results.get("summary", "")),
 	]
+	if results.has("loadout"):
+		stats_label.text += "\n\n[b]Meta[/b] %s" % str(results.get("loadout", ""))
