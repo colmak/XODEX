@@ -21,6 +21,8 @@ var sim_time: float = 0.0
 var camera_center: Vector2 = Vector2.ZERO
 var camera_zoom: float = 1.0
 
+var cell_size: float = 64.0
+
 @onready var river_ribbon: Line2D = $RiverRibbon
 
 func set_layout(viewport_size: Vector2, left_ratio: float, right_ratio: float) -> void:
@@ -29,6 +31,7 @@ func set_layout(viewport_size: Vector2, left_ratio: float, right_ratio: float) -
 	arena_rect = Rect2(left_width, 0.0, viewport_size.x - left_width - right_width, viewport_size.y)
 	grid_columns = 14 if viewport_size.x > 900.0 else GRID_COLUMNS_DEFAULT
 	grid_rows = 9 if viewport_size.x > 900.0 else GRID_ROWS_DEFAULT
+	_update_cell_size()
 	queue_redraw()
 
 
@@ -36,6 +39,7 @@ func set_rect(next_rect: Rect2) -> void:
 	arena_rect = next_rect
 	grid_columns = GRID_COLUMNS_DEFAULT
 	grid_rows = GRID_ROWS_DEFAULT
+	_update_cell_size()
 	queue_redraw()
 
 func set_camera(next_center: Vector2, next_zoom: float) -> void:
@@ -56,6 +60,10 @@ func update_state(next_path: PackedVector2Array, next_towers: Array[Dictionary],
 
 func get_arena_rect() -> Rect2:
 	return arena_rect
+
+func snap_to_grid(world_pos: Vector2) -> Vector2:
+	var safe_cell_size: float = maxf(cell_size, 1.0)
+	return (world_pos / safe_cell_size).floor() * safe_cell_size + Vector2(safe_cell_size * 0.5, safe_cell_size * 0.5)
 
 func is_point_inside_arena(point: Vector2) -> bool:
 	return arena_rect.has_point(point)
@@ -80,7 +88,8 @@ func _draw() -> void:
 	_draw_effects()
 
 func _draw_grid() -> void:
-	var cell_w: float = arena_rect.size.x / float(grid_columns)
+	_update_cell_size()
+	var cell_w: float = cell_size
 	var cell_h: float = arena_rect.size.y / float(grid_rows)
 	for x: int in range(grid_columns + 1):
 		var px: float = arena_rect.position.x + x * cell_w
@@ -93,6 +102,9 @@ func _draw_grid() -> void:
 			var glow: float = 0.12 + 0.08 * sin(sim_time * 1.1 + float(x + y))
 			var p: Vector2 = Vector2(arena_rect.position.x + x * cell_w, arena_rect.position.y + y * cell_h)
 			draw_circle(p, 1.6, Color(0.25, 0.9, 1.0, glow))
+
+func _update_cell_size() -> void:
+	cell_size = arena_rect.size.x / maxf(float(grid_columns), 1.0)
 
 func _sync_river_line() -> void:
 	if river_ribbon == null:

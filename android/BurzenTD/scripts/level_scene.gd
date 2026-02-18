@@ -78,6 +78,7 @@ func _ready() -> void:
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(placement_controller)
+	placement_controller.set_snap_callback(Callable(arena_viewport, "snap_to_grid"))
 	placement_controller.placement_preview_changed.connect(func(pos: Vector2) -> void: ghost_position = arena_viewport.snap_to_grid(pos))
 	placement_controller.placement_committed.connect(_on_placement_committed)
 	complete_screen = LEVEL_COMPLETE_SCENE.instantiate() as LevelCompleteScreen
@@ -103,6 +104,8 @@ func _apply_layout() -> void:
 		arena_camera.reset(arena_viewport.get_arena_rect().get_center())
 
 func _process(delta: float) -> void:
+	if not is_inside_tree() or (get_tree().paused and game_state != "prep"):
+		return
 	sim_time += delta
 	var scaled_delta: float = delta * game_speed
 	if two_finger_timer >= 0.0:
@@ -124,6 +127,8 @@ func _process(delta: float) -> void:
 	_update_side_panels()
 
 func _input(event: InputEvent) -> void:
+	if not is_inside_tree() or (get_tree().paused and game_state != "prep"):
+		return
 	arena_camera.consume_input(event)
 	placement_controller.handle_input(event)
 	if event is InputEventScreenTouch:
@@ -149,6 +154,8 @@ func _load_level() -> void:
 	TutorialManager.begin_level(level_id, tutorial_steps)
 	if level_root != null:
 		level_root.configure_towers(0.0, unlocked_towers)
+		var highlight_collapse: bool = level_id == "level_01_first_fold" and not TutorialManager.is_completed(level_id)
+		level_root.tower_selection_panel.call("set_collapse_highlight", highlight_collapse)
 	wave_index = 1
 	enemies_spawned_in_wave = 0
 	enemy_spawn_interval = float(config.get("spawn_interval", ENEMY_SPAWN_INTERVAL))
@@ -283,10 +290,11 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		_restart_level()
 
 func _on_placement_committed(selection: Dictionary, pos: Vector2) -> void:
-	if not arena_viewport.is_point_inside_arena(pos):
+	var snapped_pos: Vector2 = arena_viewport.snap_to_grid(pos)
+	if not arena_viewport.is_point_inside_arena(snapped_pos):
 		level_root.set_status("Place towers inside the arena only.")
 		return
-	_place_tower(pos, selection)
+	_place_tower(snapped_pos, selection)
 
 func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 	if towers.size() >= MAX_TOWERS:
@@ -394,6 +402,8 @@ func _show_complete_screen(survived: bool) -> void:
 	})
 
 func _toggle_pause() -> void:
+	if not is_inside_tree():
+		return
 	if game_state == "running":
 		game_state = "paused"
 		level_root.set_status("Paused")
