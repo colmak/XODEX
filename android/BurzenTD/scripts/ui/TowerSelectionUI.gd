@@ -68,21 +68,7 @@ func confirm_selection(position: Vector2, nearby_density: float) -> Dictionary:
 	return payload
 
 func _load_catalog(path: String) -> Array[Dictionary]:
-	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		return []
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return []
-	var towers_variant: Variant = Dictionary(parsed).get("towers", [])
-	if typeof(towers_variant) != TYPE_ARRAY:
-		return []
-	var parsed_array: Array = towers_variant
-	var loaded: Array[Dictionary] = []
-	for item: Variant in parsed_array:
-		if typeof(item) == TYPE_DICTIONARY:
-			loaded.append(Dictionary(item))
-	return loaded
+	return TowerSchema.load_catalog(path)
 
 func _is_high_tolerance(label: String) -> bool:
 	return label == "high" or label == "very_high"

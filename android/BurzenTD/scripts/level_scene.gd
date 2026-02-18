@@ -1,6 +1,8 @@
 # GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
 extends Node2D
 
+signal tower_synthesized(payload: Dictionary)
+
 const MAX_TOWERS: int = 12
 const ENEMY_SPAWN_INTERVAL: float = 0.8
 const TWO_FINGER_WINDOW: float = 0.18
@@ -21,6 +23,7 @@ const THERMAL_DEFAULT: Dictionary = {
 const ARENA_VIEWPORT_SCENE: PackedScene = preload("res://scenes/ArenaViewport.tscn")
 const LEVEL_ROOT_SCENE: PackedScene = preload("res://ui/level_root.tscn")
 const LEVEL_COMPLETE_SCENE: PackedScene = preload("res://ui/level_complete.tscn")
+const TOWER_RECIPE_BOOK_PATH: String = "res://data/synthesis/tower_recipe_book_v1.json"
 
 var arena_viewport: ArenaViewport
 var arena_camera: ArenaCamera2D
@@ -62,6 +65,9 @@ var placement_valid: bool = false
 var recommended_spots: PackedVector2Array = PackedVector2Array()
 var heat_budget_limit: int = 100
 var heat_spent: int = 0
+var synthesis_recipe_book: Dictionary = {}
+var pending_synthesis: Dictionary = {}
+var synthesis_partner_index: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -82,6 +88,8 @@ func _ready() -> void:
 	level_root.start_wave_pressed.connect(_start_first_wave)
 	level_root.tower_upgrade_requested.connect(_upgrade_tower)
 	level_root.tower_sell_requested.connect(_sell_tower)
+	level_root.tower_synthesis_confirmed.connect(_confirm_synthesis)
+	level_root.tower_synthesis_canceled.connect(_cancel_synthesis)
 	level_root.settings_changed.connect(_on_settings_changed)
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -95,6 +103,7 @@ func _ready() -> void:
 	complete_screen.replay_pressed.connect(func() -> void: LevelManager.retry_level())
 	complete_screen.next_pressed.connect(func() -> void: LevelManager.next_level())
 	_apply_layout()
+	_load_recipe_book()
 	_load_level()
 
 func _notification(what: int) -> void:
@@ -408,11 +417,143 @@ func _on_settings_changed(settings: Dictionary) -> void:
 func _try_select_tower(point: Vector2) -> void:
 	if not arena_viewport.is_point_inside_arena(point):
 		return
+	var tapped_index: int = -1
 	for index: int in range(towers.size()):
 		var t: Dictionary = towers[index]
 		if Vector2(t.get("pos", Vector2.ZERO)).distance_to(point) <= arena_viewport.cell_size * 0.75:
-			level_root.show_tower_info(index, t)
-			return
+			tapped_index = index
+			break
+	if tapped_index < 0:
+		if not pending_synthesis.is_empty() or synthesis_partner_index >= 0:
+			_cancel_synthesis()
+		return
+	if not pending_synthesis.is_empty():
+		_cancel_synthesis()
+		return
+	if synthesis_partner_index < 0:
+		synthesis_partner_index = tapped_index
+		level_root.set_status("Synthesis partner A: %s. Tap partner B to preview recipe." % str(towers[tapped_index].get("display_name", towers[tapped_index].get("tower_id", "Tower"))))
+		return
+	if synthesis_partner_index == tapped_index:
+		synthesis_partner_index = -1
+		level_root.show_tower_info(tapped_index, towers[tapped_index])
+		return
+	var preview: Dictionary = _build_synthesis_preview(synthesis_partner_index, tapped_index)
+	if preview.is_empty():
+		level_root.set_status("No synthesis recipe for this tower pair.")
+		synthesis_partner_index = -1
+		return
+	pending_synthesis = preview.duplicate(true)
+	level_root.set_synthesis_preview(preview)
+	synthesis_partner_index = -1
+
+func _build_synthesis_preview(left_index: int, right_index: int) -> Dictionary:
+	if left_index < 0 or right_index < 0 or left_index >= towers.size() or right_index >= towers.size():
+		return {}
+	if synthesis_recipe_book.is_empty():
+		return {}
+	var left: Dictionary = towers[left_index]
+	var right: Dictionary = towers[right_index]
+	var distance_limit: float = arena_viewport.cell_size * 1.8
+	var recipe_variant: Variant = synthesis_recipe_book.get("recipes", [])
+	if typeof(recipe_variant) != TYPE_ARRAY:
+		return {}
+	for recipe_item: Variant in recipe_variant:
+		if typeof(recipe_item) != TYPE_DICTIONARY:
+			continue
+		var recipe: Dictionary = Dictionary(recipe_item)
+		var ingredients: Array = Array(recipe.get("ingredients", []))
+		if ingredients.size() != 2:
+			continue
+		var left_id: String = str(left.get("tower_id", ""))
+		var right_id: String = str(right.get("tower_id", ""))
+		if not ((ingredients[0] == left_id and ingredients[1] == right_id) or (ingredients[0] == right_id and ingredients[1] == left_id)):
+			continue
+		distance_limit = float(recipe.get("max_distance_cells", 1.8)) * arena_viewport.cell_size
+		if Vector2(left.get("pos", Vector2.ZERO)).distance_to(Vector2(right.get("pos", Vector2.ZERO))) > distance_limit:
+			continue
+		var result_tower_id: String = str(recipe.get("result_tower_id", ""))
+		var result_definition: Dictionary = _find_catalog_tower(result_tower_id)
+		if result_definition.is_empty():
+			continue
+		return {
+			"left_index": left_index,
+			"right_index": right_index,
+			"left_name": str(left.get("display_name", left.get("tower_id", "Left"))),
+			"right_name": str(right.get("display_name", right.get("tower_id", "Right"))),
+			"result_name": str(result_definition.get("display_name", result_tower_id)),
+			"result_tower": result_definition,
+			"recipe": recipe,
+		}
+	return {}
+
+func _find_catalog_tower(tower_id: String) -> Dictionary:
+	if tower_id.is_empty():
+		return {}
+	var catalog: Array[Dictionary] = TowerSchema.load_catalog()
+	for entry: Dictionary in catalog:
+		if str(entry.get("tower_id", "")) == tower_id:
+			return entry.duplicate(true)
+	return {}
+
+func _confirm_synthesis(preview: Dictionary) -> void:
+	if preview.is_empty():
+		return
+	var left_index: int = int(preview.get("left_index", -1))
+	var right_index: int = int(preview.get("right_index", -1))
+	if left_index < 0 or right_index < 0 or left_index >= towers.size() or right_index >= towers.size() or left_index == right_index:
+		level_root.set_status("Synthesis failed: invalid partners.")
+		_cancel_synthesis()
+		return
+	var remove_indices: Array[int] = [left_index, right_index]
+	remove_indices.sort()
+	remove_indices.reverse()
+	var keep_position: Vector2 = Vector2(towers[left_index].get("pos", Vector2.ZERO)).lerp(Vector2(towers[right_index].get("pos", Vector2.ZERO)), 0.5)
+	var removed_cost: int = 0
+	for idx: int in remove_indices:
+		removed_cost += int(towers[idx].get("build_cost", 0))
+		towers.remove_at(idx)
+	var result_tower: Dictionary = Dictionary(preview.get("result_tower", {})).duplicate(true)
+	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
+	var tower_payload: Dictionary = {
+		"id": towers.size() + 1,
+		"pos": arena_viewport.snap_to_grid(keep_position),
+		"radius": arena_viewport.cell_size * 2.8,
+		"thermal": thermal,
+		"last_target": null,
+	}.merged(result_tower, true)
+	towers.append(tower_payload)
+	var result_cost: int = int(result_tower.get("build_cost", 0))
+	var delta: int = int(Dictionary(preview.get("recipe", {})).get("heat_credit_delta", 0))
+	heat_spent = maxi(0, heat_spent - removed_cost + result_cost + delta)
+	var message: String = "Synthesized: %s" % str(preview.get("result_name", "Tower"))
+	level_root.set_status(message)
+	emit_signal("tower_synthesized", {
+		"result_tower_id": str(result_tower.get("tower_id", "")),
+		"left_index": left_index,
+		"right_index": right_index,
+		"heat_credit_delta": delta,
+	})
+	_cancel_synthesis(false)
+
+func _cancel_synthesis(update_status: bool = false) -> void:
+	pending_synthesis.clear()
+	synthesis_partner_index = -1
+	if level_root != null:
+		level_root.clear_synthesis_preview()
+	if update_status:
+		level_root.set_status("Synthesis canceled.")
+
+func _load_recipe_book() -> void:
+	synthesis_recipe_book.clear()
+	if not FileAccess.file_exists(TOWER_RECIPE_BOOK_PATH):
+		return
+	var file: FileAccess = FileAccess.open(TOWER_RECIPE_BOOK_PATH, FileAccess.READ)
+	if file == null:
+		return
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) == TYPE_DICTIONARY:
+		synthesis_recipe_book = Dictionary(parsed)
 
 func _show_recommendation_tooltip(point: Vector2) -> void:
 	for spot: Vector2 in recommended_spots:

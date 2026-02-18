@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TOWER_PATH = ROOT / "android" / "BurzenTD" / "data" / "towers" / "tower_definitions.json"
 LEVEL_DIR = ROOT / "android" / "BurzenTD" / "levels" / "demo"
+RECIPE_BOOK_PATH = ROOT / "android" / "BurzenTD" / "data" / "synthesis" / "tower_recipe_book_v1.json"
 
 EXPECTED_IDS = [
     "hydrophobic_anchor",
@@ -39,30 +40,31 @@ def test_tower_catalog_complete_and_unique():
 
 
 def test_tower_required_keys_present():
-    required = {
-        "tower_id",
-        "display_name",
-        "scene_path",
-        "residue_class",
-        "heat_gen_rate",
-        "heat_tolerance",
-        "preferred_bind",
-        "special_ability",
-        "tooltip",
-        "affinity_modifiers",
-        "visuals",
-    }
-    towers = _load_json(TOWER_PATH)["towers"]
+    catalog = _load_json(TOWER_PATH)
+    assert catalog["tower_schema"] == "tower_schema_v1"
+    assert "legacy_key_map" in catalog["compatibility_layer"]
+    towers = catalog["towers"]
     for tower in towers:
-        assert required.issubset(set(tower.keys()))
+        assert {"tower_id", "display_name", "scene_path", "base_stats", "visuals", "synthesis"}.issubset(set(tower.keys()))
         assert tower["scene_path"].startswith("res://towers/tower_")
+        assert "economy" in tower["base_stats"]
+        assert "heat" in tower["base_stats"]
+        assert "binding" in tower["base_stats"]
+        assert "combat" in tower["base_stats"]
 
 
 def test_heat_contracts_for_specific_towers():
     towers = {t["tower_id"]: t for t in _load_json(TOWER_PATH)["towers"]}
-    assert towers["molecular_chaperone"]["heat_gen_rate"] < 0
-    assert towers["alpha_helix_pulsar"]["heat_tolerance"] == "low"
-    assert towers["hydrophobic_anchor"]["heat_gen_rate"] > 1.0
+    assert towers["molecular_chaperone"]["base_stats"]["heat"]["generation_rate"] < 0
+    assert towers["alpha_helix_pulsar"]["base_stats"]["heat"]["tolerance_label"] == "low"
+    assert towers["hydrophobic_anchor"]["base_stats"]["heat"]["generation_rate"] > 1.0
+
+
+def test_recipe_book_present_and_active_transformation():
+    recipe_book = _load_json(RECIPE_BOOK_PATH)
+    assert recipe_book["version"] == "v1"
+    assert recipe_book["synthesis_mode"] == "active_transformation"
+    assert len(recipe_book["recipes"]) >= 3
 
 
 def test_demo_levels_exist_and_progressive_unlocks():
