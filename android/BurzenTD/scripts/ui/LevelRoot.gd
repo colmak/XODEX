@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – SYNTAX HOTFIX + VERTICAL LAYOUT LOCK v0.00.9.1
+# GODOT 4.6.1 STRICT – VERTICAL LAYOUT + GEOMETRIC TOWERS v0.00.9
 extends CanvasLayer
 
 class_name LevelRoot
@@ -18,7 +18,7 @@ var global_heat_ratio: float = 0.0
 
 @onready var top_section: Control = %TopSection
 @onready var bottom_section: Control = %BottomSection
-@onready var tower_selection_panel: Control = %TowerSelectionPanel
+@onready var tower_panel: TowerSelectionPanel = %TowerSelectionPanel
 @onready var wave_label: Label = %WaveLabel
 @onready var heat_label: Label = %HeatLabel
 @onready var lives_label: Label = %LivesLabel
@@ -36,15 +36,15 @@ func _ready() -> void:
 	retry_button.pressed.connect(func() -> void: emit_signal("retry_pressed"))
 	settings_button.pressed.connect(func() -> void: emit_signal("settings_pressed"))
 	start_wave_button.pressed.connect(func() -> void: emit_signal("start_wave_pressed"))
-	tower_selection_panel.connect("tower_card_pressed", func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
-	tower_selection_panel.connect("tower_card_long_pressed", func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
+	tower_panel.tower_card_pressed.connect(func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
+	tower_panel.tower_card_long_pressed.connect(func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
 
 func get_arena_rect() -> Rect2:
 	return top_section.get_global_rect()
 
 func configure_towers(next_heat_ratio: float, unlocked_towers: Array[String]) -> void:
 	global_heat_ratio = next_heat_ratio
-	tower_selection_panel.call("configure", next_heat_ratio, unlocked_towers)
+	tower_panel.configure(next_heat_ratio, unlocked_towers)
 
 func set_metrics(wave: int, wave_total: int, lives: int, heat_ratio: float) -> void:
 	global_heat_ratio = heat_ratio
