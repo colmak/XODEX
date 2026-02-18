@@ -25,6 +25,10 @@ var user_settings: Dictionary = {
 	"tower_viz": "Geometric",
 	"show_grid_highlights": true,
 	"language": "EN",
+	"high_contrast_mode": false,
+	"color_scheme": "Default Dark Lab",
+	"heat_gradient_style": "Standard",
+	"grid_opacity": 0.25,
 }
 
 @onready var top_section: Control = %TopSection
@@ -41,7 +45,7 @@ var user_settings: Dictionary = {
 @onready var settings_button: Button = %SettingsButton
 @onready var prep_overlay: PanelContainer = %PrepOverlay
 @onready var overlay_center: CenterContainer = %OverlayCenter
-@onready var overlay_close_button: Button = %OverlayCloseButton
+@onready var overlay_close_button: BaseButton = %OverlayCloseButton
 @onready var overlay_dismiss_layer: Control = %OverlayDismissLayer
 @onready var start_wave_button: Button = %StartWaveButton
 @onready var timeline_label: Label = %TimelineLabel
@@ -53,6 +57,10 @@ var user_settings: Dictionary = {
 @onready var grid_highlights_toggle: CheckButton = %GridHighlightsToggle
 @onready var language_option_button: OptionButton = %LanguageOptionButton
 @onready var settings_close_button: Button = %SettingsCloseButton
+@onready var high_contrast_toggle: CheckButton = %HighContrastToggle
+@onready var color_scheme_option: OptionButton = %ColorSchemeOptionButton
+@onready var heat_gradient_option: OptionButton = %HeatGradientOptionButton
+@onready var grid_opacity_slider: HSlider = %GridOpacitySlider
 
 var current_tower_index: int = -1
 
@@ -70,6 +78,7 @@ func _ready() -> void:
 	tower_info_panel.visible = false
 	_setup_settings_ui()
 	_load_user_settings()
+	prep_overlay.modulate = Color(0.04, 0.1, 0.16, 0.65)
 	_apply_user_settings_to_ui()
 
 func _process(delta: float) -> void:
@@ -170,6 +179,7 @@ func _dismiss_prep_overlay() -> void:
 	if not prep_overlay_dismissable:
 		return
 	prep_overlay.visible = false
+	emit_signal("start_wave_pressed")
 
 func _setup_settings_ui() -> void:
 	viz_option_button.clear()
@@ -180,15 +190,32 @@ func _setup_settings_ui() -> void:
 	language_option_button.add_item("EN")
 	language_option_button.add_item("CN")
 	language_option_button.add_item("RU")
+	color_scheme_option.clear()
+	color_scheme_option.add_item("Default Dark Lab")
+	color_scheme_option.add_item("High Viz")
+	heat_gradient_option.clear()
+	heat_gradient_option.add_item("Standard")
+	heat_gradient_option.add_item("Colorblind")
+	grid_opacity_slider.min_value = 0.1
+	grid_opacity_slider.max_value = 1.0
+	grid_opacity_slider.step = 0.05
 	viz_option_button.item_selected.connect(_on_settings_field_changed)
 	grid_highlights_toggle.toggled.connect(func(_pressed: bool) -> void: _on_settings_field_changed(0))
 	language_option_button.item_selected.connect(_on_settings_field_changed)
+	high_contrast_toggle.toggled.connect(func(_pressed: bool) -> void: _on_settings_field_changed(0))
+	color_scheme_option.item_selected.connect(_on_settings_field_changed)
+	heat_gradient_option.item_selected.connect(_on_settings_field_changed)
+	grid_opacity_slider.value_changed.connect(func(_value: float) -> void: _on_settings_field_changed(0))
 	settings_close_button.pressed.connect(func() -> void: settings_panel.visible = false)
 
 func _on_settings_field_changed(_index: int) -> void:
 	user_settings["tower_viz"] = viz_option_button.get_item_text(viz_option_button.selected)
 	user_settings["show_grid_highlights"] = grid_highlights_toggle.button_pressed
 	user_settings["language"] = language_option_button.get_item_text(language_option_button.selected)
+	user_settings["high_contrast_mode"] = high_contrast_toggle.button_pressed
+	user_settings["color_scheme"] = color_scheme_option.get_item_text(color_scheme_option.selected)
+	user_settings["heat_gradient_style"] = heat_gradient_option.get_item_text(heat_gradient_option.selected)
+	user_settings["grid_opacity"] = grid_opacity_slider.value
 	_save_user_settings()
 	emit_signal("settings_changed", get_user_settings())
 
@@ -207,7 +234,7 @@ func _save_user_settings() -> void:
 	var settings_file: FileAccess = FileAccess.open(USER_SETTINGS_PATH, FileAccess.WRITE)
 	if settings_file == null:
 		return
-	settings_file.store_string(JSON.stringify(user_settings, "\t"))
+	settings_file.store_string(JSON.stringify(user_settings, "	"))
 
 func _apply_user_settings_to_ui() -> void:
 	var viz_index: int = 0
@@ -223,4 +250,18 @@ func _apply_user_settings_to_ui() -> void:
 			lang_index = i
 			break
 	language_option_button.select(lang_index)
+	high_contrast_toggle.button_pressed = bool(user_settings.get("high_contrast_mode", false))
+	var scheme_index: int = 0
+	for i: int in range(color_scheme_option.item_count):
+		if color_scheme_option.get_item_text(i) == str(user_settings.get("color_scheme", "Default Dark Lab")):
+			scheme_index = i
+			break
+	color_scheme_option.select(scheme_index)
+	var heat_style_index: int = 0
+	for i: int in range(heat_gradient_option.item_count):
+		if heat_gradient_option.get_item_text(i) == str(user_settings.get("heat_gradient_style", "Standard")):
+			heat_style_index = i
+			break
+	heat_gradient_option.select(heat_style_index)
+	grid_opacity_slider.value = clampf(float(user_settings.get("grid_opacity", 0.25)), 0.1, 1.0)
 	emit_signal("settings_changed", get_user_settings())
