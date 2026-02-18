@@ -12,10 +12,22 @@
       "folding_role": "core_damage",
       "build_cost": 14,
       "heat_tolerance_value": 0.75,
-      "affinity_modifiers": {"nonpolar": 0.92, "polar_uncharged": -0.2, "positively_charged": -0.25, "negatively_charged": -0.25, "special": 0.1, "keystone": 0.2},
+      "affinity_modifiers": {
+        "nonpolar": 0.92,
+        "polar_uncharged": -0.2,
+        "positively_charged": -0.25,
+        "negatively_charged": -0.25,
+        "special": 0.1,
+        "keystone": 0.2
+      },
       "special_ability": "High single-target DPS",
       "tooltip": "Hydrophobic residues cluster in protein cores. This anchor spikes DPS but raises local heat quickly.",
-      "visuals": {"primary_color": "#e879f9", "shape": "triangle"}
+      "visuals": {
+        "primary_color": "#e879f9",
+        "shape": "circle"
+      },
+      "display_name_zh": "疏水锚",
+      "display_name_ru": "Гидрофобный якорь"
     },
     {
       "tower_id": "polar_hydrator",
@@ -28,10 +40,22 @@
       "folding_role": "cooling_slow",
       "build_cost": 12,
       "heat_tolerance_value": 0.95,
-      "affinity_modifiers": {"nonpolar": 0.05, "polar_uncharged": 0.5, "positively_charged": 0.7, "negatively_charged": 0.7, "special": 0.2, "keystone": 0.25},
+      "affinity_modifiers": {
+        "nonpolar": 0.05,
+        "polar_uncharged": 0.5,
+        "positively_charged": 0.7,
+        "negatively_charged": 0.7,
+        "special": 0.2,
+        "keystone": 0.25
+      },
       "special_ability": "Area slow + passive cooling",
       "tooltip": "Polar side chains stabilize solvent-facing surfaces and help dissipate thermal agitation.",
-      "visuals": {"primary_color": "#38bdf8", "shape": "square"}
+      "visuals": {
+        "primary_color": "#38bdf8",
+        "shape": "rounded_square"
+      },
+      "display_name_zh": "极性水合器",
+      "display_name_ru": "Полярный гидратор"
     },
     {
       "tower_id": "cationic_defender",
@@ -44,10 +68,22 @@
       "folding_role": "anti_mob_repulsion",
       "build_cost": 15,
       "heat_tolerance_value": 0.7,
-      "affinity_modifiers": {"nonpolar": -0.2, "polar_uncharged": 0.3, "positively_charged": -0.75, "negatively_charged": 0.9, "special": 0.1, "keystone": 0.2},
+      "affinity_modifiers": {
+        "nonpolar": -0.2,
+        "polar_uncharged": 0.3,
+        "positively_charged": -0.75,
+        "negatively_charged": 0.9,
+        "special": 0.1,
+        "keystone": 0.2
+      },
       "special_ability": "Push-back force field",
       "tooltip": "Cationic residues pair strongly with anionic neighbors and create crowd-control pressure.",
-      "visuals": {"primary_color": "#f97316", "shape": "hexagon"}
+      "visuals": {
+        "primary_color": "#f97316",
+        "shape": "triangle_up"
+      },
+      "display_name_zh": "阳离子守卫",
+      "display_name_ru": "Катионный защитник"
     },
     {
       "tower_id": "anionic_repulsor",
@@ -60,10 +96,22 @@
       "folding_role": "barrier_reinforcement",
       "build_cost": 15,
       "heat_tolerance_value": 0.7,
-      "affinity_modifiers": {"nonpolar": -0.2, "polar_uncharged": 0.3, "positively_charged": 0.9, "negatively_charged": -0.75, "special": 0.1, "keystone": 0.2},
+      "affinity_modifiers": {
+        "nonpolar": -0.2,
+        "polar_uncharged": 0.3,
+        "positively_charged": 0.9,
+        "negatively_charged": -0.75,
+        "special": 0.1,
+        "keystone": 0.2
+      },
       "special_ability": "Static high-damage wall",
       "tooltip": "Anionic lanes lock with cationic lanes to reinforce durable ionic barriers.",
-      "visuals": {"primary_color": "#22d3ee", "shape": "diamond"}
+      "visuals": {
+        "primary_color": "#22d3ee",
+        "shape": "triangle_down"
+      },
+      "display_name_zh": "阴离子排斥器",
+      "display_name_ru": "Анионный репульсор"
     },
     {
       "tower_id": "proline_hinge",
@@ -76,10 +124,22 @@
       "folding_role": "turn_connector",
       "build_cost": 10,
       "heat_tolerance_value": 1.0,
-      "affinity_modifiers": {"nonpolar": 0.25, "polar_uncharged": 0.25, "positively_charged": 0.25, "negatively_charged": 0.25, "special": 0.4, "keystone": 0.3},
+      "affinity_modifiers": {
+        "nonpolar": 0.25,
+        "polar_uncharged": 0.25,
+        "positively_charged": 0.25,
+        "negatively_charged": 0.25,
+        "special": 0.4,
+        "keystone": 0.3
+      },
       "special_ability": "Enables sharp β-sheet angles",
       "tooltip": "Proline imposes geometric turns, enabling sharp folds and cornered sheet motifs.",
-      "visuals": {"primary_color": "#facc15", "shape": "hinge"}
+      "visuals": {
+        "primary_color": "#facc15",
+        "shape": "diamond"
+      },
+      "display_name_zh": "脯氨酸铰链",
+      "display_name_ru": "Пролиновый шарнир"
     },
     {
       "tower_id": "alpha_helix_pulsar",
@@ -92,10 +152,22 @@
       "folding_role": "rhythmic_pulse_damage",
       "build_cost": 18,
       "heat_tolerance_value": 0.55,
-      "affinity_modifiers": {"nonpolar": 0.85, "polar_uncharged": -0.15, "positively_charged": 0.1, "negatively_charged": 0.1, "special": 0.5, "keystone": 0.2},
+      "affinity_modifiers": {
+        "nonpolar": 0.85,
+        "polar_uncharged": -0.15,
+        "positively_charged": 0.1,
+        "negatively_charged": 0.1,
+        "special": 0.5,
+        "keystone": 0.2
+      },
       "special_ability": "Contractile muscle pulse",
       "tooltip": "Aligned chains activate helix-like pulse bursts with high thermal risk.",
-      "visuals": {"primary_color": "#ef4444", "shape": "spiral"}
+      "visuals": {
+        "primary_color": "#ef4444",
+        "shape": "oval"
+      },
+      "display_name_zh": "α螺旋脉冲器",
+      "display_name_ru": "Пульсар альфа-спирали"
     },
     {
       "tower_id": "beta_sheet_fortifier",
@@ -108,10 +180,22 @@
       "folding_role": "defense_barrier",
       "build_cost": 17,
       "heat_tolerance_value": 1.05,
-      "affinity_modifiers": {"nonpolar": 0.0, "polar_uncharged": 0.82, "positively_charged": 0.35, "negatively_charged": 0.35, "special": 0.3, "keystone": 0.3},
+      "affinity_modifiers": {
+        "nonpolar": 0.0,
+        "polar_uncharged": 0.82,
+        "positively_charged": 0.35,
+        "negatively_charged": 0.35,
+        "special": 0.3,
+        "keystone": 0.3
+      },
       "special_ability": "Impassable steric wall",
       "tooltip": "Parallel ladders increase rigidity and produce high-defense steric barriers.",
-      "visuals": {"primary_color": "#a3e635", "shape": "wall"}
+      "visuals": {
+        "primary_color": "#a3e635",
+        "shape": "rectangle"
+      },
+      "display_name_zh": "β折叠强化体",
+      "display_name_ru": "Укрепитель бета-листа"
     },
     {
       "tower_id": "molecular_chaperone",
@@ -124,10 +208,22 @@
       "folding_role": "global_heat_management",
       "build_cost": 20,
       "heat_tolerance_value": 1.3,
-      "affinity_modifiers": {"nonpolar": 0.35, "polar_uncharged": 0.35, "positively_charged": 0.35, "negatively_charged": 0.35, "special": 0.4, "keystone": 0.55},
+      "affinity_modifiers": {
+        "nonpolar": 0.35,
+        "polar_uncharged": 0.35,
+        "positively_charged": 0.35,
+        "negatively_charged": 0.35,
+        "special": 0.4,
+        "keystone": 0.55
+      },
       "special_ability": "Global cooling + misfold rescue",
       "tooltip": "Chaperones buffer domain heat globally and can rescue nearby misfolded residues.",
-      "visuals": {"primary_color": "#818cf8", "shape": "keystone"}
+      "visuals": {
+        "primary_color": "#818cf8",
+        "shape": "pentagon"
+      },
+      "display_name_zh": "分子伴侣",
+      "display_name_ru": "Молекулярный шаперон"
     }
   ]
 }
