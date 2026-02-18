@@ -1,7 +1,6 @@
 # GODOT 4.6.1 STRICT – VERTICAL LAYOUT + GEOMETRIC TOWERS v0.00.9
 extends Control
 
-class_name TowerSelectionPanel
 
 signal tower_card_pressed(selection: Dictionary)
 signal tower_card_long_pressed(selection: Dictionary)
