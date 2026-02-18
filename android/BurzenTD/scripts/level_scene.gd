@@ -4,7 +4,7 @@ extends Node2D
 const MAX_TOWERS: int = 12
 const ENEMY_SPAWN_INTERVAL: float = 0.8
 const TWO_FINGER_WINDOW: float = 0.18
-const PATH_SAFE_DISTANCE: float = 72.0
+const PATH_SAFE_DISTANCE: float = 48.0
 const BASE_DAMAGE: float = 47.0
 const DAMAGE_TEXT_LIFETIME: float = 0.75
 const LEFT_PANEL_RATIO: float = 0.20
@@ -41,7 +41,7 @@ var two_finger_timer: float = -1.0
 var ghost_position: Vector2 = Vector2.ZERO
 var sim_time: float = 0.0
 
-var game_state: String = "running"
+var game_state: String = "prep"
 var path_points: PackedVector2Array = PackedVector2Array()
 var path_lengths: Array[float] = []
 var total_path_length: float = 0.0
@@ -61,7 +61,7 @@ var unlocked_towers: Array[String] = []
 var game_speed: float = 1.0
 
 func _ready() -> void:
-	set_process(true)
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	SingletonGuard.assert_singleton_ready("TutorialManager", "LevelScene._ready")
 	SingletonGuard.assert_singleton_ready("HeatEngine", "LevelScene._ready")
 	SingletonGuard.assert_singleton_ready("DamageTracker", "LevelScene._ready")
@@ -80,10 +80,12 @@ func _ready() -> void:
 	right_panel.optimize_pressed.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
 	right_panel.tower_info_requested.connect(func(selection: Dictionary) -> void: left_panel.set_status(str(selection.get("tooltip", "No tooltip."))))
 	placement_controller = TowerPlacementController.new()
+	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(placement_controller)
-	placement_controller.placement_preview_changed.connect(func(pos: Vector2) -> void: ghost_position = pos)
+	placement_controller.placement_preview_changed.connect(func(pos: Vector2) -> void: ghost_position = arena_viewport.snap_to_grid(pos))
 	placement_controller.placement_committed.connect(_on_placement_committed)
 	complete_screen = LEVEL_COMPLETE_SCENE.instantiate() as LevelCompleteScreen
+	complete_screen.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(complete_screen)
 	complete_screen.replay_pressed.connect(func() -> void: LevelManager.retry_level())
 	complete_screen.next_pressed.connect(func() -> void: LevelManager.next_level())
@@ -118,6 +120,8 @@ func _process(delta: float) -> void:
 		_update_towers(scaled_delta)
 		_refresh_tower_bonds()
 		_check_win_condition()
+	elif game_state == "prep":
+		_refresh_tower_bonds()
 	_update_effects(scaled_delta)
 	arena_camera.update_follow(delta, towers, arena_viewport.get_arena_rect())
 	arena_viewport.set_camera(arena_camera.center, arena_camera.zoom_factor)
@@ -134,7 +138,7 @@ func _load_level() -> void:
 	DamageTracker.reset()
 	peak_heat = 0.0
 	var config: Dictionary = LevelManager.get_level_config()
-	path_points = config.get("path_points", PackedVector2Array([Vector2(40, 640), Vector2(680, 640)]))
+	path_points = config.get("path_points", PackedVector2Array([Vector2(40, 40), Vector2(40, 560)]))
 	wave_count = int(config.get("wave_count", 3))
 	enemies_per_wave = int(config.get("enemies_per_wave", 6))
 	enemy_speed = float(config.get("enemy_speed", 120.0))
@@ -153,8 +157,8 @@ func _load_level() -> void:
 	wave_index = 1
 	enemies_spawned_in_wave = 0
 	enemy_spawn_interval = float(config.get("spawn_interval", ENEMY_SPAWN_INTERVAL))
-	spawn_timer = enemy_spawn_interval
-	game_state = "running"
+	spawn_timer = 1.5
+	game_state = "prep"
 	lives = 3
 	towers.clear()
 	enemies.clear()
@@ -164,6 +168,31 @@ func _load_level() -> void:
 	complete_screen.visible = false
 	_normalize_path_into_arena()
 	_build_path_cache()
+	get_tree().paused = true
+	level_root.set_pre_wave_visible(true)
+
+func _start_first_wave() -> void:
+	if game_state != "prep":
+		return
+	game_state = "running"
+	spawn_timer = 1.5
+	get_tree().paused = false
+	level_root.set_pre_wave_visible(false)
+	level_root.set_status(TutorialManager.current_step_text())
+
+func _normalize_path_into_arena() -> void:
+	if path_points.size() < 2:
+		return
+	var source_bounds: Rect2 = Rect2(path_points[0], Vector2.ZERO)
+	for point: Vector2 in path_points:
+		source_bounds = source_bounds.expand(point)
+	var target: Rect2 = arena_viewport.get_arena_rect().grow(-arena_viewport.cell_size * 0.5)
+	var safe_w: float = maxf(source_bounds.size.x, 1.0)
+	var safe_h: float = maxf(source_bounds.size.y, 1.0)
+	var scale_v: Vector2 = Vector2(target.size.x / safe_w, target.size.y / safe_h)
+	for i: int in range(path_points.size()):
+		var normalized: Vector2 = (path_points[i] - source_bounds.position)
+		path_points[i] = target.position + Vector2(normalized.x * scale_v.x, normalized.y * scale_v.y)
 
 func _normalize_path_into_arena() -> void:
 	if path_points.size() < 2 or arena_viewport == null:
@@ -248,7 +277,7 @@ func _update_towers(delta: float) -> void:
 			var dealt: float = BASE_DAMAGE * (1.0 + maxf(0.0, float(t.get("heat_tolerance_value", 0.8)) - 0.7))
 			target["hp"] = float(target["hp"]) - dealt
 			DamageTracker.record_damage(str(t.get("tower_id", "unknown")), dealt)
-			_spawn_damage_text(Vector2(target["pos"]), int(round(dealt)), str(t.get("tower_id", "tower")))
+			_spawn_damage_text(Vector2(target["pos"]), int(round(dealt)))
 			if float(target["hp"]) <= 0.0:
 				_spawn_death_vfx(Vector2(target["pos"]))
 			thermal["heat"] = float(thermal["heat"]) + float(thermal["heat_per_shot"])
@@ -281,16 +310,16 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 	if towers.size() >= MAX_TOWERS:
 		return
 	for tower_data: Dictionary in towers:
-		if Vector2(tower_data["pos"]).distance_to(pos) < 80.0:
+		if Vector2(tower_data["pos"]).distance_to(pos) < arena_viewport.cell_size * 0.75:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
 		left_panel.set_status("Too close to river pathway.")
 		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
-	towers.append({
+	var tower_payload: Dictionary = {
 		"id": towers.size() + 1,
 		"pos": pos,
-		"radius": 180.0,
+		"radius": arena_viewport.cell_size * 2.8,
 		"thermal": thermal,
 		"last_target": null,
 	}.merged(definition, true))
@@ -354,8 +383,8 @@ func _update_effects(delta: float) -> void:
 		fx["t"] = float(fx["t"]) + delta
 	death_vfx = death_vfx.filter(func(entry: Dictionary) -> bool: return float(entry["t"]) < 0.45)
 
-func _spawn_damage_text(pos: Vector2, amount: int, tower_id: String) -> void:
-	floating_texts.append({"pos": pos, "amount": amount, "tower_id": tower_id, "t": 0.0})
+func _spawn_damage_text(pos: Vector2, amount: int) -> void:
+	floating_texts.append({"pos": pos, "amount": amount, "t": 0.0})
 
 func _spawn_death_vfx(pos: Vector2) -> void:
 	death_vfx.append({"pos": pos, "t": 0.0})
