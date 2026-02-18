@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – MOBILE UI v0.00.7
+# GODOT 4.6.1 STRICT – OPTIMIZED ARENA v0.00.8
 extends Node2D
 
 const MAX_TOWERS: int = 12
@@ -7,6 +7,8 @@ const TWO_FINGER_WINDOW: float = 0.18
 const PATH_SAFE_DISTANCE: float = 72.0
 const BASE_DAMAGE: float = 47.0
 const DAMAGE_TEXT_LIFETIME: float = 0.75
+const LEFT_PANEL_RATIO: float = 0.20
+const RIGHT_PANEL_RATIO: float = 0.25
 
 const THERMAL_DEFAULT: Dictionary = {
 	"capacity": 100.0,
@@ -15,10 +17,15 @@ const THERMAL_DEFAULT: Dictionary = {
 	"recovery_ratio": 0.45,
 }
 
-const LEVEL_HUD_SCENE: PackedScene = preload("res://ui/level_hud.tscn")
+const ARENA_VIEWPORT_SCENE: PackedScene = preload("res://scenes/ArenaViewport.tscn")
+const LEFT_PANEL_SCENE: PackedScene = preload("res://ui/LeftStatusPanel.tscn")
+const RIGHT_PANEL_SCENE: PackedScene = preload("res://ui/RightSelectionPanel.tscn")
 const LEVEL_COMPLETE_SCENE: PackedScene = preload("res://ui/level_complete.tscn")
 
-var hud: LevelHUD
+var arena_viewport: ArenaViewport
+var arena_camera: ArenaCamera2D
+var left_panel: LeftStatusPanel
+var right_panel: RightSelectionPanel
 var complete_screen: LevelCompleteScreen
 var placement_controller: TowerPlacementController
 
@@ -29,10 +36,10 @@ var floating_texts: Array[Dictionary] = []
 var death_vfx: Array[Dictionary] = []
 
 var spawn_timer: float = 0.0
-var touch_down_time: Dictionary = {}
 var active_touch_count: int = 0
 var two_finger_timer: float = -1.0
 var ghost_position: Vector2 = Vector2.ZERO
+var sim_time: float = 0.0
 
 var game_state: String = "running"
 var path_points: PackedVector2Array = PackedVector2Array()
@@ -58,31 +65,53 @@ func _ready() -> void:
 	SingletonGuard.assert_singleton_ready("TutorialManager", "LevelScene._ready")
 	SingletonGuard.assert_singleton_ready("HeatEngine", "LevelScene._ready")
 	SingletonGuard.assert_singleton_ready("DamageTracker", "LevelScene._ready")
+	arena_viewport = ARENA_VIEWPORT_SCENE.instantiate() as ArenaViewport
+	add_child(arena_viewport)
+	arena_camera = ArenaCamera2D.new()
+	add_child(arena_camera)
+	left_panel = LEFT_PANEL_SCENE.instantiate() as LeftStatusPanel
+	add_child(left_panel)
+	left_panel.pause_pressed.connect(_toggle_pause)
+	right_panel = RIGHT_PANEL_SCENE.instantiate() as RightSelectionPanel
+	add_child(right_panel)
+	right_panel.speed_changed.connect(func(multiplier: float) -> void: game_speed = multiplier)
+	right_panel.retry_pressed.connect(func() -> void: LevelManager.retry_level())
+	right_panel.tower_selected.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
+	right_panel.optimize_pressed.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
+	right_panel.tower_info_requested.connect(func(selection: Dictionary) -> void: left_panel.set_status(str(selection.get("tooltip", "No tooltip."))))
 	placement_controller = TowerPlacementController.new()
 	add_child(placement_controller)
 	placement_controller.placement_preview_changed.connect(func(pos: Vector2) -> void: ghost_position = pos)
 	placement_controller.placement_committed.connect(_on_placement_committed)
-	hud = LEVEL_HUD_SCENE.instantiate() as LevelHUD
-	add_child(hud)
-	hud.pause_pressed.connect(_toggle_pause)
-	hud.speed_changed.connect(func(multiplier: float) -> void: game_speed = multiplier)
-	hud.tower_selected.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
-	hud.tower_info_requested.connect(func(selection: Dictionary) -> void: hud.show_tooltip(str(selection.get("tooltip", "No tooltip."))))
 	complete_screen = LEVEL_COMPLETE_SCENE.instantiate() as LevelCompleteScreen
 	add_child(complete_screen)
 	complete_screen.replay_pressed.connect(func() -> void: LevelManager.retry_level())
 	complete_screen.next_pressed.connect(func() -> void: LevelManager.next_level())
+	_apply_layout()
 	_load_level()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_SIZE_CHANGED:
+		_apply_layout()
+
+func _apply_layout() -> void:
+	var view_size: Vector2 = get_viewport_rect().size
+	if left_panel != null:
+		left_panel.set_layout(view_size.x * LEFT_PANEL_RATIO, view_size.y)
+	if right_panel != null:
+		right_panel.set_layout(view_size.x * RIGHT_PANEL_RATIO, view_size)
+	if arena_viewport != null:
+		arena_viewport.set_layout(view_size, LEFT_PANEL_RATIO, RIGHT_PANEL_RATIO)
+	if arena_camera != null and arena_viewport != null:
+		arena_camera.reset(arena_viewport.get_arena_rect().get_center())
+
 func _process(delta: float) -> void:
+	sim_time += delta
 	var scaled_delta: float = delta * game_speed
 	if two_finger_timer >= 0.0:
 		two_finger_timer -= scaled_delta
 		if two_finger_timer < 0.0:
 			two_finger_timer = -1.0
-	if game_state == "paused":
-		queue_redraw()
-		return
 	if game_state == "running":
 		_handle_spawning(scaled_delta)
 		_update_enemies(scaled_delta)
@@ -90,10 +119,13 @@ func _process(delta: float) -> void:
 		_refresh_tower_bonds()
 		_check_win_condition()
 	_update_effects(scaled_delta)
-	_update_hud()
-	queue_redraw()
+	arena_camera.update_follow(delta, towers, arena_viewport.get_arena_rect())
+	arena_viewport.set_camera(arena_camera.center, arena_camera.zoom_factor)
+	arena_viewport.update_state(path_points, towers, enemies, tower_bonds, floating_texts, death_vfx, ghost_position, placement_controller != null and placement_controller.is_active(), sim_time)
+	_update_side_panels()
 
 func _input(event: InputEvent) -> void:
+	arena_camera.consume_input(event)
 	placement_controller.handle_input(event)
 	if event is InputEventScreenTouch:
 		_handle_touch(event)
@@ -116,7 +148,8 @@ func _load_level() -> void:
 	for step: Variant in config.get("tutorial_steps", []):
 		tutorial_steps.append(str(step))
 	TutorialManager.begin_level(level_id, tutorial_steps)
-	hud.configure_towers(0.0, unlocked_towers)
+	if right_panel != null:
+		right_panel.configure_towers(0.0, unlocked_towers)
 	wave_index = 1
 	enemies_spawned_in_wave = 0
 	enemy_spawn_interval = float(config.get("spawn_interval", ENEMY_SPAWN_INTERVAL))
@@ -127,9 +160,24 @@ func _load_level() -> void:
 	enemies.clear()
 	floating_texts.clear()
 	death_vfx.clear()
-	hud.set_status(TutorialManager.current_step_text())
+	left_panel.set_status(TutorialManager.current_step_text())
 	complete_screen.visible = false
+	_normalize_path_into_arena()
 	_build_path_cache()
+
+func _normalize_path_into_arena() -> void:
+	if path_points.size() < 2 or arena_viewport == null:
+		return
+	var source_bounds: Rect2 = Rect2(path_points[0], Vector2.ZERO)
+	for point: Vector2 in path_points:
+		source_bounds = source_bounds.expand(point)
+	var target: Rect2 = arena_viewport.get_arena_rect().grow(-36.0)
+	var safe_w: float = maxf(source_bounds.size.x, 1.0)
+	var safe_h: float = maxf(source_bounds.size.y, 1.0)
+	var scale_v: Vector2 = Vector2(target.size.x / safe_w, target.size.y / safe_h)
+	for i: int in range(path_points.size()):
+		var normalized: Vector2 = (path_points[i] - source_bounds.position)
+		path_points[i] = target.position + Vector2(normalized.x * scale_v.x, normalized.y * scale_v.y)
 
 func _build_path_cache() -> void:
 	path_lengths.clear()
@@ -155,7 +203,7 @@ func _handle_spawning(delta: float) -> void:
 		spawn_timer = 1.0
 
 func _spawn_enemy() -> void:
-	enemies.append({"id": str(Time.get_ticks_usec()), "progress": 0.0, "pos": path_points[0], "hp": 240.0, "max_hp": 240.0, "death_t": 0.0})
+	enemies.append({"id": str(Time.get_ticks_usec()), "progress": 0.0, "pos": path_points[0], "hp": 240.0, "max_hp": 240.0})
 
 func _update_enemies(delta: float) -> void:
 	var reached_end: int = 0
@@ -168,13 +216,12 @@ func _update_enemies(delta: float) -> void:
 	enemies = enemies.filter(func(e: Dictionary) -> bool: return float(e["progress"]) < total_path_length and float(e["hp"]) > 0.0)
 	if reached_end > 0:
 		lives -= reached_end
-		Input.vibrate_handheld(40)
 		if lives <= 0:
 			_set_loss_state()
 
 func _point_along_path(progress: float) -> Vector2:
 	if path_points.size() < 2:
-		return Vector2(40, 640)
+		return arena_viewport.get_arena_rect().get_center()
 	var clamped_progress: float = clampf(progress, 0.0, total_path_length)
 	var cursor: float = 0.0
 	for i: int in range(path_lengths.size()):
@@ -207,7 +254,6 @@ func _update_towers(delta: float) -> void:
 			thermal["heat"] = float(thermal["heat"]) + float(thermal["heat_per_shot"])
 			if float(thermal["heat"]) >= float(thermal["capacity"]):
 				thermal["overheated"] = true
-				Input.vibrate_handheld(20)
 
 func _tower_target(tower: Dictionary) -> Variant:
 	for e: Dictionary in enemies:
@@ -218,17 +264,17 @@ func _tower_target(tower: Dictionary) -> Variant:
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
 		active_touch_count += 1
-		touch_down_time[event.index] = Time.get_ticks_msec() / 1000.0
 		if active_touch_count >= 2:
 			two_finger_timer = TWO_FINGER_WINDOW
 		return
 	active_touch_count = max(0, active_touch_count - 1)
-	touch_down_time.erase(event.index)
 	if two_finger_timer >= 0.0:
 		_restart_level()
 
 func _on_placement_committed(selection: Dictionary, pos: Vector2) -> void:
-	hud.hide_tooltip()
+	if not arena_viewport.is_point_inside_arena(pos):
+		left_panel.set_status("Place towers inside the arena only.")
+		return
 	_place_tower(pos, selection)
 
 func _place_tower(pos: Vector2, definition: Dictionary) -> void:
@@ -238,7 +284,7 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		if Vector2(tower_data["pos"]).distance_to(pos) < 80.0:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
-		hud.set_status("Too close to river pathway.")
+		left_panel.set_status("Too close to river pathway.")
 		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	towers.append({
@@ -248,9 +294,8 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		"thermal": thermal,
 		"last_target": null,
 	}.merged(definition, true))
-	Input.vibrate_handheld(20)
 	TutorialManager.advance_step()
-	hud.set_status(TutorialManager.current_step_text())
+	left_panel.set_status(TutorialManager.current_step_text())
 
 func _refresh_tower_bonds() -> void:
 	var graph_input: Array[Dictionary] = []
@@ -278,29 +323,27 @@ func _average_free_energy() -> float:
 func _check_win_condition() -> void:
 	if wave_index <= wave_count or not enemies.is_empty() or game_state != "running":
 		return
-	var free_energy: float = _average_free_energy()
-	if free_energy > free_energy_threshold or tower_bonds.size() < minimum_bonds:
+	if _average_free_energy() > free_energy_threshold or tower_bonds.size() < minimum_bonds:
 		_set_loss_state()
-		hud.set_status("Fold unstable. Improve bond count or reduce heat.")
+		left_panel.set_status("Fold unstable. Improve bond count or reduce heat.")
 		return
 	game_state = "won"
 	TutorialManager.complete_level()
-	Input.vibrate_handheld(80)
 	_show_complete_screen(true)
 
 func _set_loss_state() -> void:
 	game_state = "lost"
-	hud.set_status("Breach detected. Cooling down failed.")
+	left_panel.set_status("Breach detected. Cooling down failed.")
 	enemies.clear()
 	_show_complete_screen(false)
 
 func _restart_level() -> void:
 	LevelManager.retry_level()
 
-func _update_hud() -> void:
-	if hud == null:
-		return
-	hud.set_header(min(wave_index, wave_count), wave_count, lives, _average_free_energy(), DamageTracker.get_total_damage())
+func _update_side_panels() -> void:
+	var heat_ratio: float = _average_free_energy()
+	left_panel.set_metrics(min(wave_index, wave_count), wave_count, spawn_timer, lives, heat_ratio, DamageTracker.get_total_damage())
+	right_panel.set_global_heat_ratio(heat_ratio)
 
 func _update_effects(delta: float) -> void:
 	for text: Dictionary in floating_texts:
@@ -334,46 +377,12 @@ func _show_complete_screen(survived: bool) -> void:
 		"peak_heat": max_heat,
 		"bonds": tower_bonds.size(),
 		"efficiency": efficiency,
-		"summary": "Your β-sheet wall blocked 68 % of the wave – great hydrophobic clustering!",
+		"summary": "Microscope fold stabilized with high-quality residue clustering.",
 	})
 
 func _toggle_pause() -> void:
 	if game_state == "running":
 		game_state = "paused"
-		hud.set_status("Paused")
+		left_panel.set_status("Paused")
 	elif game_state == "paused":
 		game_state = "running"
-
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color("111827"), true)
-	if path_points.size() >= 2:
-		draw_polyline(path_points, Color("f59e0b"), 34.0, true)
-		draw_polyline(path_points, Color("fde68a"), 8.0, true)
-	for enemy_data: Dictionary in enemies:
-		var p: Vector2 = enemy_data["pos"]
-		draw_polygon([p + Vector2(0, -14), p + Vector2(13, 11), p + Vector2(-13, 11)], [Color("f8fafc")])
-		var hp_ratio: float = clampf(float(enemy_data["hp"]) / float(enemy_data["max_hp"]), 0.0, 1.0)
-		draw_rect(Rect2(p + Vector2(-16, -24), Vector2(32 * hp_ratio, 4)), Color(1.0 - hp_ratio, hp_ratio, 0.2, 1.0), true)
-	for bond: Dictionary in tower_bonds:
-		var intensity: float = clampf(absf(float(bond["strength"])), 0.2, 1.0)
-		draw_line(bond["from"], bond["to"], Color(0.6, 0.9, 1.0, 0.2 + intensity * 0.3), 3.0)
-	for t: Dictionary in towers:
-		var thermal: Dictionary = t["thermal"]
-		var heat_ratio: float = clampf(float(thermal["heat"]) / float(thermal["capacity"]), 0.0, 1.0)
-		var c: Color = Color(0.2 + heat_ratio * 0.8, 0.45 + (1.0 - heat_ratio) * 0.4, 1.0 - heat_ratio, 1.0)
-		if bool(thermal["overheated"]):
-			c = Color(1.0, 0.2, 0.1, 1.0)
-		draw_circle(t["pos"], 28.0, c)
-		if t["last_target"] != null:
-			draw_line(t["pos"], t["last_target"], Color(1.0, 0.4, 0.3, 0.6), 3.0)
-	if placement_controller != null and placement_controller.is_active():
-		draw_circle(ghost_position, 24.0, Color(0.3, 1.0, 0.8, 0.35))
-		draw_arc(ghost_position, 180.0, 0.0, TAU, 48, Color(0.3, 1.0, 0.8, 0.25), 2.0)
-	for entry: Dictionary in floating_texts:
-		var alpha: float = 1.0 - float(entry["t"]) / DAMAGE_TEXT_LIFETIME
-		draw_string(ThemeDB.fallback_font, Vector2(entry["pos"]), "-%d" % int(entry["amount"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.35, 0.35, alpha))
-	for fx: Dictionary in death_vfx:
-		var t: float = float(fx["t"])
-		var radius: float = lerpf(10.0, 42.0, t / 0.45)
-		var alpha_fx: float = 1.0 - t / 0.45
-		draw_circle(Vector2(fx["pos"]), radius, Color(0.5, 0.9, 1.0, alpha_fx * 0.4))
