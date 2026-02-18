@@ -7,8 +7,9 @@ const TWO_FINGER_WINDOW: float = 0.18
 const PATH_SAFE_DISTANCE: float = 48.0
 const BASE_DAMAGE: float = 47.0
 const DAMAGE_TEXT_LIFETIME: float = 0.75
-const LEFT_PANEL_RATIO: float = 0.20
-const RIGHT_PANEL_RATIO: float = 0.25
+const LEFT_PANEL_RATIO: float = 0.0
+const RIGHT_PANEL_RATIO: float = 0.0
+const ARENA_PADDING_RATIO: float = 0.11
 
 const THERMAL_DEFAULT: Dictionary = {
 	"capacity": 100.0,
@@ -58,6 +59,7 @@ var level_id: String = ""
 var unlocked_towers: Array[String] = []
 var game_speed: float = 1.0
 var placement_valid: bool = false
+var recommended_spots: PackedVector2Array = PackedVector2Array()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -77,6 +79,7 @@ func _ready() -> void:
 	level_root.tower_info_requested.connect(func(selection: Dictionary) -> void: level_root.set_status(str(selection.get("tooltip", "No tooltip."))))
 	level_root.start_wave_pressed.connect(_start_first_wave)
 	level_root.tower_upgrade_requested.connect(_upgrade_tower)
+	level_root.settings_changed.connect(_on_settings_changed)
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(placement_controller)
@@ -177,8 +180,15 @@ func _load_level() -> void:
 	complete_screen.visible = false
 	_normalize_path_into_arena()
 	_build_path_cache()
-	get_tree().paused = true
-	level_root.set_pre_wave_visible(true)
+	recommended_spots = _compute_recommended_spots()
+	arena_viewport.set_recommended_spots(recommended_spots)
+	var tutorial_overlay: bool = level_id.ends_with("first_fold") or level_id.contains("01")
+	get_tree().paused = tutorial_overlay
+	level_root.configure_pre_wave_overlay(tutorial_overlay, true)
+	if not tutorial_overlay:
+		level_root.set_status("Level hot-start: overlay hidden for advanced stage.")
+		_start_first_wave()
+	_on_settings_changed(level_root.get_user_settings())
 
 func _start_first_wave() -> void:
 	if game_state != "prep":
@@ -196,7 +206,10 @@ func _normalize_path_into_arena() -> void:
 	var source_bounds: Rect2 = Rect2(path_points[0], Vector2.ZERO)
 	for point: Vector2 in path_points:
 		source_bounds = source_bounds.expand(point)
-	var target: Rect2 = arena_viewport.get_arena_rect().grow(-36.0)
+	var viewport_rect: Rect2 = arena_viewport.get_arena_rect()
+	var horizontal_padding: float = viewport_rect.size.x * ARENA_PADDING_RATIO
+	var vertical_padding: float = viewport_rect.size.y * ARENA_PADDING_RATIO
+	var target: Rect2 = Rect2(viewport_rect.position + Vector2(horizontal_padding, vertical_padding), viewport_rect.size - Vector2(horizontal_padding * 2.0, vertical_padding * 2.0))
 	var safe_w: float = maxf(source_bounds.size.x, 1.0)
 	var safe_h: float = maxf(source_bounds.size.y, 1.0)
 	var scale_v: Vector2 = Vector2(target.size.x / safe_w, target.size.y / safe_h)
@@ -345,7 +358,36 @@ func _on_placement_preview_changed(pos: Vector2) -> void:
 	placement_valid = _is_valid_placement(ghost_position)
 	var selected: Dictionary = placement_controller.get_selected_tower()
 	var heat_delta: int = int(selected.get("build_cost", 0))
-	level_root.set_status("Snap cell ready | Bonds preview active | Heat %+d°C" % heat_delta)
+	var placement_state: String = "valid" if placement_valid else "invalid"
+	level_root.set_status("Snap cell %s | Bonds preview active | Heat %+d°C" % [placement_state, heat_delta])
+
+
+func _compute_recommended_spots() -> PackedVector2Array:
+	var spots: PackedVector2Array = PackedVector2Array()
+	var desired: int = randi_range(3, 5)
+	if path_points.size() < 2:
+		return spots
+	var lane_offset: float = maxf(arena_viewport.cell_size * 1.8, PATH_SAFE_DISTANCE + 10.0)
+	for i: int in range(path_points.size() - 1):
+		if spots.size() >= desired:
+			break
+		var a: Vector2 = path_points[i]
+		var b: Vector2 = path_points[i + 1]
+		var center: Vector2 = a.lerp(b, 0.5)
+		var tangent: Vector2 = (b - a).normalized()
+		var normal: Vector2 = Vector2(-tangent.y, tangent.x)
+		var candidate_a: Vector2 = arena_viewport.snap_to_grid(center + normal * lane_offset)
+		var candidate_b: Vector2 = arena_viewport.snap_to_grid(center - normal * lane_offset)
+		if _is_valid_placement(candidate_a):
+			spots.append(candidate_a)
+		if spots.size() >= desired:
+			break
+		if _is_valid_placement(candidate_b):
+			spots.append(candidate_b)
+	return spots
+
+func _on_settings_changed(settings: Dictionary) -> void:
+	arena_viewport.apply_user_settings(settings)
 
 func _try_select_tower(point: Vector2) -> void:
 	if not arena_viewport.is_point_inside_arena(point):
