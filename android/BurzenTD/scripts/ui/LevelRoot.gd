@@ -24,13 +24,6 @@ var info_visible_for: float = 0.0
 var current_tower_index: int = -1
 var pending_sell_confirm: bool = false
 var current_sell_value: int = 0
-var _user_settings: Dictionary = {
-	"show_grid_highlights": true,
-	"high_contrast_mode": false,
-	"color_scheme": "Default Dark Lab",
-	"heat_gradient_style": "Standard",
-	"grid_opacity": 0.25,
-}
 
 @onready var safe_area_root: Control = %SafeAreaRoot
 @onready var top_section: Control = %TopSection
@@ -76,7 +69,6 @@ func _ready() -> void:
 	tower_info_panel.visible = false
 	pause_modal.visible = false
 	_apply_safe_area_layout()
-	emit_signal("settings_changed", get_user_settings())
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
@@ -113,7 +105,7 @@ func get_arena_rect() -> Rect2:
 	return top_section.get_global_rect()
 
 func get_user_settings() -> Dictionary:
-	return _user_settings.duplicate(true)
+	return user_settings.duplicate(true)
 
 func configure_towers(next_heat_ratio: float, unlocked_towers: Array[String]) -> void:
 	global_heat_ratio = next_heat_ratio
