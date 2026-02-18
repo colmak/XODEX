@@ -17,7 +17,7 @@ grow_vertical = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-stretch_ratio = 2.0
+stretch_ratio = 65.0
 
 [node name="TopMargin" type="MarginContainer" parent="Root/TopSection"]
 layout_mode = 2
@@ -51,7 +51,7 @@ text = "Leaks 3"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-stretch_ratio = 1.0
+stretch_ratio = 35.0
 
 [node name="BottomVBox" type="VBoxContainer" parent="Root/BottomSection"]
 layout_mode = 2

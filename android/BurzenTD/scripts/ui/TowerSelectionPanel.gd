@@ -46,7 +46,6 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
 	vbox.add_child(icon)
 	var title: Label = Label.new()
-	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
 	title.text = "%s  %s" % [_shape_glyph(shape), str(entry.get("display_name", "Tower"))]
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)

@@ -31,6 +31,13 @@ func set_layout(viewport_size: Vector2, left_ratio: float, right_ratio: float) -
 	grid_rows = 9 if viewport_size.x > 900.0 else GRID_ROWS_DEFAULT
 	queue_redraw()
 
+
+func set_rect(next_rect: Rect2) -> void:
+	arena_rect = next_rect
+	grid_columns = GRID_COLUMNS_DEFAULT
+	grid_rows = GRID_ROWS_DEFAULT
+	queue_redraw()
+
 func set_camera(next_center: Vector2, next_zoom: float) -> void:
 	camera_center = next_center
 	camera_zoom = next_zoom
