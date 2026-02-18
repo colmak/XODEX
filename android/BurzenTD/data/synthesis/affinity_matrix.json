@@ -1,0 +1,20 @@
+{
+  "compatibility_matrix": {
+    "fire_core": {
+      "water_shard": 0.2,
+      "air_crystal": 0.8,
+      "earth_rune": 0.5
+    },
+    "ice_core": {
+      "crystal_shard": 0.82,
+      "diamond_fragment": 0.86
+    },
+    "lightning_shard": {
+      "fire_core": 0.88,
+      "earth_rune": 0.35
+    }
+  },
+  "thermal_penalty_gain": 0.4,
+  "distance_falloff": 0.12,
+  "orientation_gain": 0.05
+}
