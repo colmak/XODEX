@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – SYNTAX HOTFIX + VERTICAL LAYOUT LOCK v0.00.9.1
+# GODOT 4.6.1 STRICT – OPTIMIZED ARENA v0.00.8
 extends Node2D
 
 const MAX_TOWERS: int = 12
@@ -7,6 +7,8 @@ const TWO_FINGER_WINDOW: float = 0.18
 const PATH_SAFE_DISTANCE: float = 48.0
 const BASE_DAMAGE: float = 47.0
 const DAMAGE_TEXT_LIFETIME: float = 0.75
+const LEFT_PANEL_RATIO: float = 0.20
+const RIGHT_PANEL_RATIO: float = 0.25
 
 const THERMAL_DEFAULT: Dictionary = {
 	"capacity": 100.0,
@@ -16,11 +18,14 @@ const THERMAL_DEFAULT: Dictionary = {
 }
 
 const ARENA_VIEWPORT_SCENE: PackedScene = preload("res://scenes/ArenaViewport.tscn")
-const LEVEL_ROOT_SCENE: PackedScene = preload("res://ui/level_root.tscn")
+const LEFT_PANEL_SCENE: PackedScene = preload("res://ui/LeftStatusPanel.tscn")
+const RIGHT_PANEL_SCENE: PackedScene = preload("res://ui/RightSelectionPanel.tscn")
 const LEVEL_COMPLETE_SCENE: PackedScene = preload("res://ui/level_complete.tscn")
 
 var arena_viewport: ArenaViewport
-var level_root: LevelRoot
+var arena_camera: ArenaCamera2D
+var left_panel: LeftStatusPanel
+var right_panel: RightSelectionPanel
 var complete_screen: LevelCompleteScreen
 var placement_controller: TowerPlacementController
 
@@ -61,17 +66,19 @@ func _ready() -> void:
 	SingletonGuard.assert_singleton_ready("HeatEngine", "LevelScene._ready")
 	SingletonGuard.assert_singleton_ready("DamageTracker", "LevelScene._ready")
 	arena_viewport = ARENA_VIEWPORT_SCENE.instantiate() as ArenaViewport
-	arena_viewport.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(arena_viewport)
-	level_root = LEVEL_ROOT_SCENE.instantiate() as LevelRoot
-	level_root.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(level_root)
-	level_root.pause_pressed.connect(_toggle_pause)
-	level_root.speed_changed.connect(func(multiplier: float) -> void: game_speed = multiplier)
-	level_root.retry_pressed.connect(func() -> void: LevelManager.retry_level())
-	level_root.tower_selected.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
-	level_root.tower_info_requested.connect(func(selection: Dictionary) -> void: level_root.set_status(str(selection.get("tooltip", "No tooltip."))))
-	level_root.start_wave_pressed.connect(_start_first_wave)
+	arena_camera = ArenaCamera2D.new()
+	add_child(arena_camera)
+	left_panel = LEFT_PANEL_SCENE.instantiate() as LeftStatusPanel
+	add_child(left_panel)
+	left_panel.pause_pressed.connect(_toggle_pause)
+	right_panel = RIGHT_PANEL_SCENE.instantiate() as RightSelectionPanel
+	add_child(right_panel)
+	right_panel.speed_changed.connect(func(multiplier: float) -> void: game_speed = multiplier)
+	right_panel.retry_pressed.connect(func() -> void: LevelManager.retry_level())
+	right_panel.tower_selected.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
+	right_panel.optimize_pressed.connect(func(selection: Dictionary) -> void: placement_controller.start(selection))
+	right_panel.tower_info_requested.connect(func(selection: Dictionary) -> void: left_panel.set_status(str(selection.get("tooltip", "No tooltip."))))
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(placement_controller)
@@ -90,12 +97,15 @@ func _notification(what: int) -> void:
 		_apply_layout()
 
 func _apply_layout() -> void:
-	if level_root == null or arena_viewport == null:
-		return
-	arena_viewport.set_arena_frame(level_root.get_arena_rect())
-	if not path_points.is_empty():
-		_normalize_path_into_arena()
-		_build_path_cache()
+	var view_size: Vector2 = get_viewport_rect().size
+	if left_panel != null:
+		left_panel.set_layout(view_size.x * LEFT_PANEL_RATIO, view_size.y)
+	if right_panel != null:
+		right_panel.set_layout(view_size.x * RIGHT_PANEL_RATIO, view_size)
+	if arena_viewport != null:
+		arena_viewport.set_layout(view_size, LEFT_PANEL_RATIO, RIGHT_PANEL_RATIO)
+	if arena_camera != null and arena_viewport != null:
+		arena_camera.reset(arena_viewport.get_arena_rect().get_center())
 
 func _process(delta: float) -> void:
 	sim_time += delta
@@ -113,10 +123,13 @@ func _process(delta: float) -> void:
 	elif game_state == "prep":
 		_refresh_tower_bonds()
 	_update_effects(scaled_delta)
+	arena_camera.update_follow(delta, towers, arena_viewport.get_arena_rect())
+	arena_viewport.set_camera(arena_camera.center, arena_camera.zoom_factor)
 	arena_viewport.update_state(path_points, towers, enemies, tower_bonds, floating_texts, death_vfx, ghost_position, placement_controller != null and placement_controller.is_active(), sim_time)
-	_update_ui()
+	_update_side_panels()
 
 func _input(event: InputEvent) -> void:
+	arena_camera.consume_input(event)
 	placement_controller.handle_input(event)
 	if event is InputEventScreenTouch:
 		_handle_touch(event)
@@ -139,7 +152,8 @@ func _load_level() -> void:
 	for step: Variant in config.get("tutorial_steps", []):
 		tutorial_steps.append(str(step))
 	TutorialManager.begin_level(level_id, tutorial_steps)
-	level_root.configure_towers(0.0, unlocked_towers)
+	if right_panel != null:
+		right_panel.configure_towers(0.0, unlocked_towers)
 	wave_index = 1
 	enemies_spawned_in_wave = 0
 	enemy_spawn_interval = float(config.get("spawn_interval", ENEMY_SPAWN_INTERVAL))
@@ -150,7 +164,7 @@ func _load_level() -> void:
 	enemies.clear()
 	floating_texts.clear()
 	death_vfx.clear()
-	level_root.set_status("Place towers now — unlimited time before wave starts.")
+	left_panel.set_status(TutorialManager.current_step_text())
 	complete_screen.visible = false
 	_normalize_path_into_arena()
 	_build_path_cache()
@@ -166,8 +180,6 @@ func _start_first_wave() -> void:
 	level_root.set_pre_wave_visible(false)
 	level_root.set_status(TutorialManager.current_step_text())
 
-
-# SINGLE IMPLEMENTATION – DUPLICATE REMOVED
 func _normalize_path_into_arena() -> void:
 	if path_points.size() < 2:
 		return
@@ -175,6 +187,20 @@ func _normalize_path_into_arena() -> void:
 	for point: Vector2 in path_points:
 		source_bounds = source_bounds.expand(point)
 	var target: Rect2 = arena_viewport.get_arena_rect().grow(-arena_viewport.cell_size * 0.5)
+	var safe_w: float = maxf(source_bounds.size.x, 1.0)
+	var safe_h: float = maxf(source_bounds.size.y, 1.0)
+	var scale_v: Vector2 = Vector2(target.size.x / safe_w, target.size.y / safe_h)
+	for i: int in range(path_points.size()):
+		var normalized: Vector2 = (path_points[i] - source_bounds.position)
+		path_points[i] = target.position + Vector2(normalized.x * scale_v.x, normalized.y * scale_v.y)
+
+func _normalize_path_into_arena() -> void:
+	if path_points.size() < 2 or arena_viewport == null:
+		return
+	var source_bounds: Rect2 = Rect2(path_points[0], Vector2.ZERO)
+	for point: Vector2 in path_points:
+		source_bounds = source_bounds.expand(point)
+	var target: Rect2 = arena_viewport.get_arena_rect().grow(-36.0)
 	var safe_w: float = maxf(source_bounds.size.x, 1.0)
 	var safe_h: float = maxf(source_bounds.size.y, 1.0)
 	var scale_v: Vector2 = Vector2(target.size.x / safe_w, target.size.y / safe_h)
@@ -275,11 +301,10 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		_restart_level()
 
 func _on_placement_committed(selection: Dictionary, pos: Vector2) -> void:
-	var snapped: Vector2 = arena_viewport.snap_to_grid(pos)
-	if not arena_viewport.is_point_inside_arena(snapped):
-		level_root.set_status("Place towers in the top arena grid.")
+	if not arena_viewport.is_point_inside_arena(pos):
+		left_panel.set_status("Place towers inside the arena only.")
 		return
-	_place_tower(snapped, selection)
+	_place_tower(pos, selection)
 
 func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 	if towers.size() >= MAX_TOWERS:
@@ -288,7 +313,7 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		if Vector2(tower_data["pos"]).distance_to(pos) < arena_viewport.cell_size * 0.75:
 			return
 	if _distance_to_path(pos) < PATH_SAFE_DISTANCE:
-		level_root.set_status("Too close to river pathway.")
+		left_panel.set_status("Too close to river pathway.")
 		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	var tower_payload: Dictionary = {
@@ -297,10 +322,9 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		"radius": arena_viewport.cell_size * 2.8,
 		"thermal": thermal,
 		"last_target": null,
-	}.merged(definition, true)
-	towers.append(tower_payload)
+	}.merged(definition, true))
 	TutorialManager.advance_step()
-	level_root.set_status(TutorialManager.current_step_text())
+	left_panel.set_status(TutorialManager.current_step_text())
 
 func _refresh_tower_bonds() -> void:
 	var graph_input: Array[Dictionary] = []
@@ -330,7 +354,7 @@ func _check_win_condition() -> void:
 		return
 	if _average_free_energy() > free_energy_threshold or tower_bonds.size() < minimum_bonds:
 		_set_loss_state()
-		level_root.set_status("Fold unstable. Improve bond count or reduce heat.")
+		left_panel.set_status("Fold unstable. Improve bond count or reduce heat.")
 		return
 	game_state = "won"
 	TutorialManager.complete_level()
@@ -338,16 +362,17 @@ func _check_win_condition() -> void:
 
 func _set_loss_state() -> void:
 	game_state = "lost"
-	level_root.set_status("Breach detected. Cooling down failed.")
+	left_panel.set_status("Breach detected. Cooling down failed.")
 	enemies.clear()
 	_show_complete_screen(false)
 
 func _restart_level() -> void:
 	LevelManager.retry_level()
 
-func _update_ui() -> void:
+func _update_side_panels() -> void:
 	var heat_ratio: float = _average_free_energy()
-	level_root.set_metrics(min(wave_index, wave_count), wave_count, lives, heat_ratio)
+	left_panel.set_metrics(min(wave_index, wave_count), wave_count, spawn_timer, lives, heat_ratio, DamageTracker.get_total_damage())
+	right_panel.set_global_heat_ratio(heat_ratio)
 
 func _update_effects(delta: float) -> void:
 	for text: Dictionary in floating_texts:
@@ -381,12 +406,12 @@ func _show_complete_screen(survived: bool) -> void:
 		"peak_heat": max_heat,
 		"bonds": tower_bonds.size(),
 		"efficiency": efficiency,
-		"summary": "Vertical fold stabilized with visible geometric towers.",
+		"summary": "Microscope fold stabilized with high-quality residue clustering.",
 	})
 
 func _toggle_pause() -> void:
 	if game_state == "running":
 		game_state = "paused"
-		level_root.set_status("Paused")
+		left_panel.set_status("Paused")
 	elif game_state == "paused":
 		game_state = "running"

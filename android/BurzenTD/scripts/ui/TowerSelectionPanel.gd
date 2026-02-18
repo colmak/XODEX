@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – NO CLASS_NAME – FIXED DUPLICATE SHAPE
+# GODOT 4.6.1 STRICT – VERTICAL LAYOUT + GEOMETRIC TOWERS v0.00.9
 extends Control
 
 
@@ -39,21 +39,20 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	card.size_flags_horizontal = Control.SIZE_FILL
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
-	var icon_shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
+	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
 	var icon: Label = Label.new()
-	icon.text = _shape_glyph(icon_shape)
+	icon.text = _shape_glyph(shape)
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
 	vbox.add_child(icon)
 	var title: Label = Label.new()
-	title.text = str(entry.get("display_name", "Tower"))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
+	title.text = "%s  %s" % [_shape_glyph(shape), str(entry.get("display_name", "Tower"))]
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
 	var multi: Label = Label.new()
 	multi.text = "%s\n%s" % [str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
 	multi.modulate = Color(0.84, 0.9, 1.0, 1.0)
-	multi.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	multi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(multi)
 	var role: Label = Label.new()
