@@ -104,6 +104,9 @@ func _apply_safe_area_layout() -> void:
 func get_arena_rect() -> Rect2:
 	return top_section.get_global_rect()
 
+func get_user_settings() -> Dictionary:
+	return user_settings.duplicate(true)
+
 func configure_towers(next_heat_ratio: float, unlocked_towers: Array[String]) -> void:
 	global_heat_ratio = next_heat_ratio
 	tower_selection_panel.call("configure", next_heat_ratio, unlocked_towers)
