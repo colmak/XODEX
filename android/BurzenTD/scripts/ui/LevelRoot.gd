@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
+# GODOT 4.6.1 STRICT – LEVEL 3 FIX v0.01.0.1
 extends CanvasLayer
 
 class_name LevelRoot
@@ -9,15 +9,23 @@ signal pause_pressed
 signal speed_changed(multiplier: float)
 signal retry_pressed
 signal settings_pressed
+signal settings_changed(user_settings: Dictionary)
 signal start_wave_pressed
 signal tower_upgrade_requested(tower_index: int)
 
 const SPEEDS: Array[float] = [1.0, 2.0, 3.0]
 const INFO_AUTO_COLLAPSE_SECONDS: float = 3.0
+const USER_SETTINGS_PATH: String = "user://user_settings.json"
 
 var speed_mode: int = 0
 var global_heat_ratio: float = 0.0
 var info_visible_for: float = 0.0
+var prep_overlay_dismissable: bool = true
+var user_settings: Dictionary = {
+	"tower_viz": "Geometric",
+	"show_grid_highlights": true,
+	"language": "EN",
+}
 
 @onready var top_section: Control = %TopSection
 @onready var tower_selection_panel: Control = %TowerSelectionPanel
@@ -32,11 +40,19 @@ var info_visible_for: float = 0.0
 @onready var retry_button: Button = %RetryButton
 @onready var settings_button: Button = %SettingsButton
 @onready var prep_overlay: PanelContainer = %PrepOverlay
+@onready var overlay_center: CenterContainer = %OverlayCenter
+@onready var overlay_close_button: Button = %OverlayCloseButton
+@onready var overlay_dismiss_layer: Control = %OverlayDismissLayer
 @onready var start_wave_button: Button = %StartWaveButton
 @onready var timeline_label: Label = %TimelineLabel
 @onready var tower_info_panel: PanelContainer = %TowerInfoPanel
 @onready var tower_info_label: RichTextLabel = %TowerInfoLabel
 @onready var tower_upgrade_button: Button = %TowerUpgradeButton
+@onready var settings_panel: PanelContainer = %SettingsPanel
+@onready var viz_option_button: OptionButton = %VizOptionButton
+@onready var grid_highlights_toggle: CheckButton = %GridHighlightsToggle
+@onready var language_option_button: OptionButton = %LanguageOptionButton
+@onready var settings_close_button: Button = %SettingsCloseButton
 
 var current_tower_index: int = -1
 
@@ -44,12 +60,17 @@ func _ready() -> void:
 	pause_button.pressed.connect(func() -> void: emit_signal("pause_pressed"))
 	speed_button.pressed.connect(_on_speed_pressed)
 	retry_button.pressed.connect(func() -> void: emit_signal("retry_pressed"))
-	settings_button.pressed.connect(func() -> void: emit_signal("settings_pressed"))
+	settings_button.pressed.connect(_on_settings_pressed)
 	start_wave_button.pressed.connect(func() -> void: emit_signal("start_wave_pressed"))
+	overlay_close_button.pressed.connect(_dismiss_prep_overlay)
+	overlay_dismiss_layer.gui_input.connect(_on_overlay_dismiss_layer_input)
 	tower_upgrade_button.pressed.connect(_on_upgrade_pressed)
 	tower_selection_panel.connect("tower_card_pressed", func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
 	tower_selection_panel.connect("tower_card_long_pressed", func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
 	tower_info_panel.visible = false
+	_setup_settings_ui()
+	_load_user_settings()
+	_apply_user_settings_to_ui()
 
 func _process(delta: float) -> void:
 	if not tower_info_panel.visible:
@@ -63,6 +84,7 @@ func get_arena_rect() -> Rect2:
 
 func configure_towers(next_heat_ratio: float, unlocked_towers: Array[String]) -> void:
 	global_heat_ratio = next_heat_ratio
+	tower_selection_panel.call("set_language", str(user_settings.get("language", "EN")))
 	tower_selection_panel.call("configure", next_heat_ratio, unlocked_towers)
 
 func set_metrics(wave: int, wave_total: int, enemies_alive: int, enemies_total: int, lives: int, heat_ratio: float) -> void:
@@ -82,6 +104,12 @@ func set_wave_preview(icons_text: String, forecast: String) -> void:
 
 func set_status(message: String) -> void:
 	status_label.text = message
+
+func configure_pre_wave_overlay(show_overlay: bool, dismissable: bool) -> void:
+	prep_overlay_dismissable = dismissable
+	set_pre_wave_visible(show_overlay)
+	overlay_close_button.visible = dismissable
+	overlay_dismiss_layer.mouse_filter = Control.MOUSE_FILTER_STOP if dismissable else Control.MOUSE_FILTER_IGNORE
 
 func set_pre_wave_visible(visible_state: bool) -> void:
 	prep_overlay.visible = visible_state
@@ -105,6 +133,9 @@ func hide_tower_info() -> void:
 	current_tower_index = -1
 	info_visible_for = 0.0
 
+func get_user_settings() -> Dictionary:
+	return user_settings.duplicate(true)
+
 func _on_upgrade_pressed() -> void:
 	if current_tower_index < 0:
 		return
@@ -118,3 +149,78 @@ func _on_speed_pressed() -> void:
 	var speed: float = SPEEDS[speed_mode]
 	speed_button.text = "×%.0f" % speed
 	emit_signal("speed_changed", speed)
+
+func _on_settings_pressed() -> void:
+	emit_signal("settings_pressed")
+	settings_panel.visible = not settings_panel.visible
+
+func _on_overlay_dismiss_layer_input(event: InputEvent) -> void:
+	if not prep_overlay.visible or not prep_overlay_dismissable:
+		return
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+		if mouse_event.pressed and not overlay_center.get_global_rect().has_point(mouse_event.position):
+			_dismiss_prep_overlay()
+	if event is InputEventScreenTouch:
+		var touch: InputEventScreenTouch = event
+		if touch.pressed and not overlay_center.get_global_rect().has_point(touch.position):
+			_dismiss_prep_overlay()
+
+func _dismiss_prep_overlay() -> void:
+	if not prep_overlay_dismissable:
+		return
+	prep_overlay.visible = false
+
+func _setup_settings_ui() -> void:
+	viz_option_button.clear()
+	viz_option_button.add_item("Geometric")
+	viz_option_button.add_item("Realistic PDB")
+	viz_option_button.add_item("Custom")
+	language_option_button.clear()
+	language_option_button.add_item("EN")
+	language_option_button.add_item("CN")
+	language_option_button.add_item("RU")
+	viz_option_button.item_selected.connect(_on_settings_field_changed)
+	grid_highlights_toggle.toggled.connect(func(_pressed: bool) -> void: _on_settings_field_changed(0))
+	language_option_button.item_selected.connect(_on_settings_field_changed)
+	settings_close_button.pressed.connect(func() -> void: settings_panel.visible = false)
+
+func _on_settings_field_changed(_index: int) -> void:
+	user_settings["tower_viz"] = viz_option_button.get_item_text(viz_option_button.selected)
+	user_settings["show_grid_highlights"] = grid_highlights_toggle.button_pressed
+	user_settings["language"] = language_option_button.get_item_text(language_option_button.selected)
+	_save_user_settings()
+	emit_signal("settings_changed", get_user_settings())
+
+func _load_user_settings() -> void:
+	if not FileAccess.file_exists(USER_SETTINGS_PATH):
+		return
+	var settings_file: FileAccess = FileAccess.open(USER_SETTINGS_PATH, FileAccess.READ)
+	if settings_file == null:
+		return
+	var parsed: Variant = JSON.parse_string(settings_file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	user_settings = user_settings.merged(Dictionary(parsed), true)
+
+func _save_user_settings() -> void:
+	var settings_file: FileAccess = FileAccess.open(USER_SETTINGS_PATH, FileAccess.WRITE)
+	if settings_file == null:
+		return
+	settings_file.store_string(JSON.stringify(user_settings, "\t"))
+
+func _apply_user_settings_to_ui() -> void:
+	var viz_index: int = 0
+	for i: int in range(viz_option_button.item_count):
+		if viz_option_button.get_item_text(i) == str(user_settings.get("tower_viz", "Geometric")):
+			viz_index = i
+			break
+	viz_option_button.select(viz_index)
+	grid_highlights_toggle.button_pressed = bool(user_settings.get("show_grid_highlights", true))
+	var lang_index: int = 0
+	for i: int in range(language_option_button.item_count):
+		if language_option_button.get_item_text(i) == str(user_settings.get("language", "EN")):
+			lang_index = i
+			break
+	language_option_button.select(lang_index)
+	emit_signal("settings_changed", get_user_settings())

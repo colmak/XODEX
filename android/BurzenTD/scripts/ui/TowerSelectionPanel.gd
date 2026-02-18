@@ -6,7 +6,11 @@ signal tower_card_pressed(selection: Dictionary)
 signal tower_card_long_pressed(selection: Dictionary)
 
 const LONG_PRESS_SECONDS: float = 0.45
-const CARD_MIN_SIZE: Vector2 = Vector2(240.0, 118.0)
+const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
+const TOWER_ICON_SEARCH_PATHS: Array[String] = [
+	"res://assets/towers/%s_geometric.png",
+	"res://assets/towers/geometric_%s.png",
+]
 
 var module: TowerSelectionUI
 var cards: Dictionary = {}
@@ -14,6 +18,7 @@ var active_press_id: String = ""
 var press_elapsed: float = 0.0
 var long_press_fired: bool = false
 var is_collapsed: bool = false
+var language_code: String = "EN"
 
 @onready var collapse_button: Button = %CollapseButton
 @onready var content: VBoxContainer = %Content
@@ -45,19 +50,30 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
 	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
-	var icon: Label = Label.new()
-	icon.text = _shape_glyph(shape)
-	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
-	vbox.add_child(icon)
+	var icon_texture: Texture2D = _resolve_tower_texture(str(entry.get("tower_id", "")))
+	if icon_texture != null:
+		var icon_rect: TextureRect = TextureRect.new()
+		icon_rect.texture = icon_texture
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(112.0, 84.0)
+		vbox.add_child(icon_rect)
+	else:
+		var icon: Label = Label.new()
+		icon.text = _shape_glyph(shape)
+		icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
+		icon.add_theme_font_size_override("font_size", 38)
+		vbox.add_child(icon)
 	var title: Label = Label.new()
-	title.text = "%s  %s" % [_shape_glyph(shape), str(entry.get("display_name", "Tower"))]
+	title.text = "%s  %s" % [_shape_glyph(shape), _localized_title(entry)]
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
 	var multi: Label = Label.new()
 	multi.text = "%s\n%s" % [str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
 	multi.modulate = Color(0.84, 0.9, 1.0, 1.0)
 	multi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	multi.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(multi)
 	var role: Label = Label.new()
 	role.text = str(entry.get("folding_role", ""))
@@ -79,6 +95,7 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	tolerance_bar.value = float(entry.get("heat_tolerance_value", 0.0))
 	tolerance_bar.show_percentage = false
 	vbox.add_child(tolerance_bar)
+	card.tooltip_text = str(entry.get("tooltip", ""))
 	if _is_recommended(entry, global_heat_ratio):
 		var badge: Label = Label.new()
 		badge.text = "Recommended"
@@ -158,3 +175,20 @@ func set_collapse_highlight(enabled: bool) -> void:
 		collapse_button.modulate = Color(1.0, 0.95, 0.4, 1.0)
 	else:
 		collapse_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+func set_language(next_language: String) -> void:
+	language_code = next_language.to_upper()
+
+func _localized_title(entry: Dictionary) -> String:
+	if language_code == "CN":
+		return str(entry.get("display_name_zh", entry.get("display_name", "Tower")))
+	if language_code == "RU":
+		return str(entry.get("display_name_ru", entry.get("display_name", "Tower")))
+	return str(entry.get("display_name", "Tower"))
+
+func _resolve_tower_texture(tower_id: String) -> Texture2D:
+	for template_path: String in TOWER_ICON_SEARCH_PATHS:
+		var icon_path: String = template_path % tower_id
+		if ResourceLoader.exists(icon_path):
+			return load(icon_path) as Texture2D
+	return null

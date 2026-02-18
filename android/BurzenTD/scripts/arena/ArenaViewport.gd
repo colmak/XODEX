@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
+# GODOT 4.6.1 STRICT – LEVEL 3 FIX v0.01.0.1
 extends Node2D
 
 class_name ArenaViewport
@@ -22,6 +22,8 @@ var placement_heat_delta: int = 0
 var sim_time: float = 0.0
 var camera_center: Vector2 = Vector2.ZERO
 var camera_zoom: float = 1.0
+var recommended_spots: PackedVector2Array = PackedVector2Array()
+var show_grid_highlights: bool = true
 
 var cell_size: float = 64.0
 
@@ -46,6 +48,14 @@ func set_rect(next_rect: Rect2) -> void:
 func set_camera(next_center: Vector2, next_zoom: float) -> void:
 	camera_center = next_center
 	camera_zoom = next_zoom
+
+func set_recommended_spots(next_spots: PackedVector2Array) -> void:
+	recommended_spots = next_spots
+	queue_redraw()
+
+func apply_user_settings(settings: Dictionary) -> void:
+	show_grid_highlights = bool(settings.get("show_grid_highlights", true))
+	queue_redraw()
 
 func update_state(next_path: PackedVector2Array, next_towers: Array[Dictionary], next_enemies: Array[Dictionary], next_bonds: Array[Dictionary], next_floating: Array[Dictionary], next_death: Array[Dictionary], next_ghost: Vector2, is_placing: bool, is_valid_placement: bool, heat_delta: int, next_time: float) -> void:
 	path_points = next_path
@@ -88,7 +98,8 @@ func _draw() -> void:
 		var g: Vector2 = _world_to_draw(ghost_position)
 		var ghost_color: Color = Color(0.2, 0.95, 0.62, 0.33) if placement_valid else Color(1.0, 0.24, 0.2, 0.33)
 		draw_circle(g, 26.0 * camera_zoom, ghost_color)
-		draw_arc(g, 175.0 * camera_zoom, 0.0, TAU, 56, ghost_color, 2.0)
+		draw_arc(g, 175.0 * camera_zoom, 0.0, TAU, 56, Color(0.3, 0.95, 1.0, 0.38), 2.0)
+		draw_arc(g, 32.0 * camera_zoom, 0.0, TAU, 40, ghost_color, 4.0)
 		var popup_pos: Vector2 = g + Vector2(28.0, -30.0)
 		draw_string(ThemeDB.fallback_font, popup_pos, "%+d°C" % placement_heat_delta, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, ghost_color)
 	_draw_effects()
@@ -103,10 +114,13 @@ func _draw_grid() -> void:
 	for y: int in range(grid_rows + 1):
 		var py: float = arena_rect.position.y + y * cell_h
 		draw_line(Vector2(arena_rect.position.x, py), Vector2(arena_rect.end.x, py), Color(0.23, 0.65, 0.8, 0.2), 1.0)
-	for x: int in range(grid_columns):
-		for y: int in range(grid_rows):
-			var p: Vector2 = Vector2(arena_rect.position.x + (x + 0.5) * cell_w, arena_rect.position.y + (y + 0.5) * cell_h)
-			draw_string(ThemeDB.fallback_font, p + Vector2(-6, 5), "%d" % (y * grid_columns + x + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.6, 0.85, 1.0, 0.18))
+	if show_grid_highlights:
+		for point: Vector2 in recommended_spots:
+			var draw_point: Vector2 = _world_to_draw(point)
+			var pulse: float = 0.5 + 0.5 * sin(sim_time * 2.2 + point.x * 0.01)
+			var spot_color: Color = Color(0.4, 1.0, 0.45, 0.25 + pulse * 0.3)
+			draw_rect(Rect2(draw_point - Vector2(cell_w * 0.48, cell_h * 0.48), Vector2(cell_w * 0.96, cell_h * 0.96)), spot_color, false, 2.0)
+			draw_string(ThemeDB.fallback_font, draw_point + Vector2(-58.0, -8.0), "Optimal: β-sheet potential", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.8, 1.0, 0.8, 0.55))
 
 func _update_cell_size() -> void:
 	cell_size = arena_rect.size.x / maxf(float(grid_columns), 1.0)
