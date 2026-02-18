@@ -11,216 +11,170 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_mock")
 
-[node name="WorldLayer" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.067, 0.09, 0.137, 1)
-
-[node name="RangeOverlay" type="Control" parent="WorldLayer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
+color = Color(0.0392157, 0.101961, 0.164706, 1)
 
 [node name="TopBar" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 94.0
+offset_bottom = 40.0
 grow_horizontal = 2
 
-[node name="TopBarMargin" type="MarginContainer" parent="TopBar"]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 10
-
-[node name="TopBarHBox" type="HBoxContainer" parent="TopBar/TopBarMargin"]
-layout_mode = 2
-theme_override_constants/separation = 24
-
-[node name="VersionLabel" type="Label" parent="TopBar/TopBarMargin/TopBarHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "BURZEN TD v0.00.4.1 Prototype"
-
-[node name="WaveLabel" type="Label" parent="TopBar/TopBarMargin/TopBarHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Wave 1/8"
-
-[node name="MobBudgetLabel" type="Label" parent="TopBar/TopBarMargin/TopBarHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Mob Budget: balanced"
-
-[node name="SettingsButton" type="Button" parent="TopBar/TopBarMargin/TopBarHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Settings"
-
-[node name="RightPanel" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 9
-anchor_left = 1.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -390.0
-offset_top = 110.0
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="RightMargin" type="MarginContainer" parent="RightPanel"]
+[node name="TopMargin" type="MarginContainer" parent="TopBar"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
+theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_bottom = 6
 
-[node name="RightVBox" type="VBoxContainer" parent="RightPanel/RightMargin"]
+[node name="TopHBox" type="HBoxContainer" parent="TopBar/TopMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
 
-[node name="TowerMenuHeader" type="Label" parent="RightPanel/RightMargin/RightVBox"]
-layout_mode = 2
-text = "Tower Selection"
-
-[node name="TowerMenu" type="Tree" parent="RightPanel/RightMargin/RightVBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 340)
-layout_mode = 2
-hide_root = true
-
-[node name="SnapToGridCheck" type="CheckBox" parent="RightPanel/RightMargin/RightVBox"]
+[node name="WaveInfoLabel" type="Label" parent="TopBar/TopMargin/TopHBox"]
 unique_name_in_owner = true
 layout_mode = 2
-button_pressed = true
-text = "Snap to Grid"
+size_flags_horizontal = 3
+text = "Wave 1/4 | Enemies: 0/20 | Next: ▲ ●"
 
-[node name="StatsPanel" type="PanelContainer" parent="RightPanel/RightMargin/RightVBox"]
-layout_mode = 2
-
-[node name="StatsMargin" type="MarginContainer" parent="RightPanel/RightMargin/RightVBox/StatsPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
-
-[node name="StatsVBox" type="VBoxContainer" parent="RightPanel/RightMargin/RightVBox/StatsPanel/StatsMargin"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="TowerDetailLabel" type="Label" parent="RightPanel/RightMargin/RightVBox/StatsPanel/StatsMargin/StatsVBox"]
+[node name="HeatLabel" type="Label" parent="TopBar/TopMargin/TopHBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Select a tower to view details"
-autowrap_mode = 3
+size_flags_horizontal = 3
+horizontal_alignment = 1
+text = "Heat: 100°C (+0.8/tick)"
 
-[node name="MobOverlayLabel" type="Label" parent="RightPanel/RightMargin/RightVBox/StatsPanel/StatsMargin/StatsVBox"]
+[node name="LeaksLabel" type="Label" parent="TopBar/TopMargin/TopHBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Mob Overlay: HP 120 | Armor 14 | Speed 1.0"
-autowrap_mode = 3
-
-[node name="SafetyStateLabel" type="Label" parent="RightPanel/RightMargin/RightVBox/StatsPanel/StatsMargin/StatsVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "NESOROX Safety: Stable"
+size_flags_horizontal = 3
+horizontal_alignment = 2
+text = "Leaks: 0/10"
 
 [node name="BottomPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -160.0
+offset_top = -360.0
 grow_horizontal = 2
 grow_vertical = 0
+modulate = Color(1, 1, 1, 0.8)
 
 [node name="BottomMargin" type="MarginContainer" parent="BottomPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
-
-[node name="BottomHBox" type="HBoxContainer" parent="BottomPanel/BottomMargin"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PlacementHintLabel" type="Label" parent="BottomPanel/BottomMargin/BottomHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Click world space to place selected tower. Invalid placements auto-collapse to safe state."
-autowrap_mode = 3
-
-[node name="SimulateWaveButton" type="Button" parent="BottomPanel/BottomMargin/BottomHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Simulate Wave"
-
-[node name="ClearPlacementsButton" type="Button" parent="BottomPanel/BottomMargin/BottomHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Clear"
-
-[node name="SettingsPopup" type="PopupPanel" parent="."]
-unique_name_in_owner = true
-initial_position = 1
-size = Vector2i(430, 360)
-
-[node name="SettingsMargin" type="MarginContainer" parent="SettingsPopup"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
+theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 10
 
-[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPopup/SettingsMargin"]
+[node name="BottomVBox" type="VBoxContainer" parent="BottomPanel/BottomMargin"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="GeneralSection" type="VBoxContainer" parent="SettingsPopup/SettingsMargin/SettingsVBox"]
+[node name="BottomHeader" type="HBoxContainer" parent="BottomPanel/BottomMargin/BottomVBox"]
 layout_mode = 2
 
-[node name="GeneralTitle" type="Button" parent="SettingsPopup/SettingsMargin/SettingsVBox/GeneralSection"]
-text = "▼ General Settings"
+[node name="PanelToggleButton" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/BottomHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(64, 48)
+text = "▼ Towers"
 
-[node name="GeneralBody" type="Label" parent="SettingsPopup/SettingsMargin/SettingsVBox/GeneralSection"]
-text = "Volume, game speed, HUD toggle."
+[node name="PlacementHintLabel" type="Label" parent="BottomPanel/BottomMargin/BottomVBox/BottomHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Drag a tower card onto highlighted spots."
 autowrap_mode = 3
 
-[node name="TowerSection" type="VBoxContainer" parent="SettingsPopup/SettingsMargin/SettingsVBox"]
+[node name="CardsGrid" type="GridContainer" parent="BottomPanel/BottomMargin/BottomVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 4
+
+[node name="Card01" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "△ Triangle"
+
+[node name="Card02" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "▢ Square"
+
+[node name="Card03" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "▭ Rectangle"
+
+[node name="Card04" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "火 Fire"
+
+[node name="Card05" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "水 Water"
+
+[node name="Card06" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "土 Earth"
+
+[node name="Card07" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "风 Air"
+
+[node name="Card08" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/CardsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "Ж Keystone"
+
+[node name="TowerInfoLabel" type="Label" parent="BottomPanel/BottomMargin/BottomVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tap a placed tower for info/sell (90% refund)."
+autowrap_mode = 3
+
+[node name="ControlsBar" type="HBoxContainer" parent="BottomPanel/BottomMargin/BottomVBox"]
 layout_mode = 2
 
-[node name="TowerTitle" type="Button" parent="SettingsPopup/SettingsMargin/SettingsVBox/TowerSection"]
-text = "▶ Tower Settings"
-
-[node name="WaveSection" type="VBoxContainer" parent="SettingsPopup/SettingsMargin/SettingsVBox"]
+[node name="PauseButton" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/ControlsBar"]
+unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(72, 48)
+text = "Pause"
 
-[node name="WaveTitle" type="Button" parent="SettingsPopup/SettingsMargin/SettingsVBox/WaveSection"]
-text = "▶ Wave Settings"
-
-[node name="AdvancedSection" type="VBoxContainer" parent="SettingsPopup/SettingsMargin/SettingsVBox"]
+[node name="SpeedButton" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/ControlsBar"]
+unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(72, 48)
+text = "1x"
 
-[node name="AdvancedTitle" type="Button" parent="SettingsPopup/SettingsMargin/SettingsVBox/AdvancedSection"]
-text = "▶ Advanced Gameplay"
+[node name="RetryButton" type="Button" parent="BottomPanel/BottomMargin/BottomVBox/ControlsBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(72, 48)
+text = "Retry"
 
-[connection signal="pressed" from="TopBar/TopBarMargin/TopBarHBox/SettingsButton" to="." method="_on_settings_button_pressed"]
-[connection signal="item_selected" from="RightPanel/RightMargin/RightVBox/TowerMenu" to="." method="_on_tower_menu_item_selected"]
-[connection signal="toggled" from="RightPanel/RightMargin/RightVBox/SnapToGridCheck" to="." method="_on_snap_toggled"]
-[connection signal="pressed" from="BottomPanel/BottomMargin/BottomHBox/SimulateWaveButton" to="." method="_on_simulate_wave_pressed"]
-[connection signal="pressed" from="BottomPanel/BottomMargin/BottomHBox/ClearPlacementsButton" to="." method="_on_clear_placements_pressed"]
+[node name="CollapseTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 5.0
+one_shot = true
+
+[connection signal="pressed" from="BottomPanel/BottomMargin/BottomVBox/BottomHeader/PanelToggleButton" to="." method="_on_panel_toggle_pressed"]
+[connection signal="pressed" from="BottomPanel/BottomMargin/BottomVBox/ControlsBar/PauseButton" to="." method="_on_pause_pressed"]
+[connection signal="pressed" from="BottomPanel/BottomMargin/BottomVBox/ControlsBar/SpeedButton" to="." method="_on_speed_pressed"]
+[connection signal="pressed" from="BottomPanel/BottomMargin/BottomVBox/ControlsBar/RetryButton" to="." method="_on_retry_pressed"]
+[connection signal="timeout" from="CollapseTimer" to="." method="_on_collapse_timer_timeout"]
