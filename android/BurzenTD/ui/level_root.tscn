@@ -6,123 +6,215 @@
 [node name="LevelRoot" type="CanvasLayer"]
 script = ExtResource("1_root")
 
-[node name="Root" type="VBoxContainer" parent="."]
+[node name="TopSection" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 1220.0
+grow_horizontal = 2
+modulate = Color(1, 1, 1, 0.92)
+
+[node name="TopBar" type="PanelContainer" parent="TopSection"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="TopInfo" type="HBoxContainer" parent="TopSection/TopBar"]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = -16.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 12
 
-[node name="TopSection" type="PanelContainer" parent="Root"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-stretch_ratio = 2.0
-
-[node name="TopMargin" type="MarginContainer" parent="Root/TopSection"]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
-
-[node name="TopInfo" type="HBoxContainer" parent="Root/TopSection/TopMargin"]
-layout_mode = 2
-
-[node name="WaveLabel" type="Label" parent="Root/TopSection/TopMargin/TopInfo"]
+[node name="WaveLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Wave 1/1"
+text = "Wave 1/4 | 0/20 enemies"
 
-[node name="HeatLabel" type="Label" parent="Root/TopSection/TopMargin/TopInfo"]
+[node name="HeatLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Heat 0°C"
+text = "Heat 100°C"
 
-[node name="LivesLabel" type="Label" parent="Root/TopSection/TopMargin/TopInfo"]
+[node name="HeatIncomeLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Leaks 3"
+text = "+0.8/tick"
 
-[node name="BottomSection" type="PanelContainer" parent="Root"]
+[node name="RewardLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next: +25 Heat"
+
+[node name="LivesLabel" type="Label" parent="TopSection/TopBar/TopInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Leaks 3/10"
+
+[node name="TimelinePanel" type="PanelContainer" parent="TopSection"]
+layout_mode = 1
+anchors_preset = 9
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -120.0
+offset_right = -16.0
+offset_bottom = 120.0
+modulate = Color(1, 1, 1, 0.82)
+
+[node name="TimelineLabel" type="Label" parent="TopSection/TimelinePanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Preview: ▲ ● ◆\nHot wave incoming"
+autowrap_mode = 3
+
+[node name="TowerInfoPanel" type="PanelContainer" parent="TopSection"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 9
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -390.0
+offset_top = -250.0
+offset_right = -12.0
+offset_bottom = -12.0
+modulate = Color(1, 1, 1, 0.82)
+
+[node name="TowerInfoVBox" type="VBoxContainer" parent="TopSection/TowerInfoPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="TowerInfoLabel" type="RichTextLabel" parent="TopSection/TowerInfoPanel/TowerInfoVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-stretch_ratio = 1.0
+bbcode_enabled = true
+text = ""
 
-[node name="BottomVBox" type="VBoxContainer" parent="Root/BottomSection"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 10
-
-[node name="TowerSelectionPanel" type="Control" parent="Root/BottomSection/BottomVBox"]
+[node name="TowerUpgradeButton" type="Button" parent="TopSection/TowerInfoPanel/TowerInfoVBox"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+text = "+12 DPS | +10% Speed | Cost: 18°C"
+
+[node name="BottomSection" type="PanelContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -460.0
+grow_horizontal = 2
+grow_vertical = 0
+modulate = Color(1, 1, 1, 0.85)
+
+[node name="BottomVBox" type="VBoxContainer" parent="BottomSection"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="TowerSelectionPanel" type="Control" parent="BottomSection/BottomVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
 script = ExtResource("2_tower_panel")
-layout_mode = 2
-size_flags_vertical = 3
 
-[node name="Header" type="HBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel"]
+[node name="Header" type="HBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel"]
 layout_mode = 2
 
-[node name="CollapseButton" type="Button" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Header"]
+[node name="CollapseButton" type="Button" parent="BottomSection/BottomVBox/TowerSelectionPanel/Header"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 54)
+custom_minimum_size = Vector2(240, 56)
 layout_mode = 2
 text = "▲ Towers"
 
-[node name="Content" type="VBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel"]
+[node name="Content" type="VBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
 
-[node name="Scroll" type="ScrollContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Content"]
+[node name="Scroll" type="ScrollContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel/Content"]
 layout_mode = 2
-size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 220)
 horizontal_scroll_mode = 1
 vertical_scroll_mode = 2
 
-[node name="CardContainer" type="HBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Content/Scroll"]
+[node name="CardContainer" type="HBoxContainer" parent="BottomSection/BottomVBox/TowerSelectionPanel/Content/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
-[node name="StatusLabel" type="Label" parent="Root/BottomSection/BottomVBox"]
+[node name="StatusLabel" type="Label" parent="BottomSection/BottomVBox"]
 unique_name_in_owner = true
 layout_mode = 2
+text = "Tap a residue card to start placement"
 autowrap_mode = 3
-text = ""
 
-[node name="MenuRow" type="HBoxContainer" parent="Root/BottomSection/BottomVBox"]
+[node name="MenuRow" type="HBoxContainer" parent="BottomSection/BottomVBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
-[node name="PauseButton" type="Button" parent="Root/BottomSection/BottomVBox/MenuRow"]
+[node name="PauseButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(160, 60)
 layout_mode = 2
-text = "Pause"
+text = "⏸"
 
-[node name="SpeedButton" type="Button" parent="Root/BottomSection/BottomVBox/MenuRow"]
+[node name="SpeedButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(160, 60)
 layout_mode = 2
 text = "×1"
 
-[node name="RetryButton" type="Button" parent="Root/BottomSection/BottomVBox/MenuRow"]
+[node name="RetryButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(160, 60)
 layout_mode = 2
 text = "Retry"
 
-[node name="SettingsButton" type="Button" parent="Root/BottomSection/BottomVBox/MenuRow"]
+[node name="SettingsButton" type="Button" parent="BottomSection/BottomVBox/MenuRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(160, 60)
 layout_mode = 2
-text = "Settings"
+text = "⚙"
 
 [node name="PrepOverlay" type="PanelContainer" parent="."]
 unique_name_in_owner = true
@@ -131,12 +223,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+modulate = Color(1, 1, 1, 0.92)
 
 [node name="OverlayCenter" type="CenterContainer" parent="PrepOverlay"]
 layout_mode = 2
 
 [node name="OverlayPanel" type="PanelContainer" parent="PrepOverlay/OverlayCenter"]
-custom_minimum_size = Vector2(560, 340)
+custom_minimum_size = Vector2(560, 380)
 layout_mode = 2
 
 [node name="OverlayVBox" type="VBoxContainer" parent="PrepOverlay/OverlayCenter/OverlayPanel"]
@@ -146,10 +239,10 @@ theme_override_constants/separation = 12
 [node name="PrepTitle" type="Label" parent="PrepOverlay/OverlayCenter/OverlayPanel/OverlayVBox"]
 layout_mode = 2
 horizontal_alignment = 1
-text = "PREPARE YOUR PROTEIN FOLD\n准备你的蛋白折叠\nПодготовьте белковую укладку"
+text = "PRE-WAVE DECISION WINDOW\n准备你的蛋白折叠\nПодготовьте белковую укладку"
 
 [node name="StartWaveButton" type="Button" parent="PrepOverlay/OverlayCenter/OverlayPanel/OverlayVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(450, 56)
+custom_minimum_size = Vector2(450, 60)
 layout_mode = 2
 text = "START FIRST WAVE"

@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – MOBILE UI v0.00.7
+# GODOT 4.6.1 STRICT – DECISION ENGINE UI v0.01.0
 extends Node
 
 class_name TowerPlacementController
@@ -15,6 +15,7 @@ var snap_callback: Callable = Callable()
 func start(selection: Dictionary) -> void:
 	selected_tower = selection.duplicate(true)
 	placement_mode = true
+	Input.vibrate_handheld(20)
 
 func set_snap_callback(callback: Callable) -> void:
 	snap_callback = callback
@@ -51,6 +52,9 @@ func handle_input(event: InputEvent) -> void:
 
 func is_active() -> bool:
 	return placement_mode
+
+func get_selected_tower() -> Dictionary:
+	return selected_tower.duplicate(true)
 
 func _snap_if_available(world_pos: Vector2) -> Vector2:
 	if snap_callback.is_valid():
