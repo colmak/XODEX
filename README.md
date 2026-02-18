@@ -2,16 +2,35 @@
 
 Open-source Android + simulation prototype for **BURZEN TD**, currently tracked as:
 
-- **Runtime baseline:** `v0.00.3.0` (playable loop, procedural level routing, thermal tower mechanics)
-- **Design/scene expansion draft:** `v0.00.4.0` (mockup scene tree + UI wiring + expanded tower taxonomy scaffolding)
+- **Runtime milestone:** `v0.00.5.0` (typed-script hardening, demo campaign flow, thermal tower mechanics)
+- **Latest published release notes:** `v0.00.4.1` (`docs/releases/v0.00.4.1.md`)
+- **Design/scene expansion baseline:** `v0.00.4.0` (mockup scene tree + UI wiring + expanded tower taxonomy scaffolding)
 
 This repository intentionally keeps **prototype runtime stability** and **forward design experiments** side by side so contributors can iterate without blocking core gameplay.
 
 ---
 
+## Quick Start (contributors)
+
+1. Open `android/BurzenTD/project.godot` in **Godot 4.6.1.stable**.
+2. Press **Play** to boot the main menu, or choose **Demo Campaign** for curated tutorial levels.
+3. Run local validation before pushing changes:
+
+```bash
+./scripts/run_tests.sh
+```
+
+For CLI regression simulation focused on the demo campaign shell, run:
+
+```bash
+android/BurzenTD/tests/cli_sim/cli_regression.sh
+```
+
+---
+
 ## 1) Project Status and Versioning
 
-### Current stable gameplay layer (`v0.00.3.0`)
+### Current stable gameplay layer (`v0.00.5.0`)
 Implemented in the primary Godot scenes/scripts and simulation modules:
 
 - Touch-first placement loop
@@ -28,7 +47,7 @@ The repository includes a **Godot UI/scene mockup** for the planned expansion:
 - Mock mob stats overlays and settings panel structure
 - Integration notes for future GDScript and optional GDNative/Haskell bridge
 
-> Important: `v0.00.4.0` assets are currently **prototype scaffolding**, not yet full gameplay parity with the stable `v0.00.3.0` runtime loop.
+> Important: `v0.00.4.0` assets are currently **prototype scaffolding**, not yet full gameplay parity with the stable `v0.00.5.0` runtime loop.
 
 ### Versioning policy
 BURZEN TD uses incremental pre-1.0 semantics:
