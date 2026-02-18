@@ -4,4 +4,7 @@
 
 [node name="Tower03" type="Node2D"]
 script = ExtResource("1_base")
+visible = true
+modulate = Color(1, 1, 1, 1)
+z_index = 6
 tower_id = "cationic_defender"
