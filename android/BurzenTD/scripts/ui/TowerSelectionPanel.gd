@@ -40,6 +40,12 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	card.size_flags_horizontal = Control.SIZE_FILL
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
+	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
+	var icon: Label = Label.new()
+	icon.text = _shape_glyph(shape)
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
+	vbox.add_child(icon)
 	var title: Label = Label.new()
 	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
 	title.text = "%s  %s" % [_shape_glyph(shape), str(entry.get("display_name", "Tower"))]
@@ -58,6 +64,18 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	stats.text = "Cost %d | Heat %.2f | Tol %.2f" % [int(entry.get("build_cost", 0)), float(entry.get("heat_gen_rate", 0.0)), float(entry.get("heat_tolerance_value", 0.0))]
 	stats.modulate = Color(0.85, 0.95, 0.82, 1.0)
 	vbox.add_child(stats)
+	var heat_bar: ProgressBar = ProgressBar.new()
+	heat_bar.min_value = 0.0
+	heat_bar.max_value = 1.5
+	heat_bar.value = float(entry.get("heat_gen_rate", 0.0))
+	heat_bar.show_percentage = false
+	vbox.add_child(heat_bar)
+	var tolerance_bar: ProgressBar = ProgressBar.new()
+	tolerance_bar.min_value = 0.0
+	tolerance_bar.max_value = 1.5
+	tolerance_bar.value = float(entry.get("heat_tolerance_value", 0.0))
+	tolerance_bar.show_percentage = false
+	vbox.add_child(tolerance_bar)
 	if _is_recommended(entry, global_heat_ratio):
 		var badge: Label = Label.new()
 		badge.text = "Recommended"
