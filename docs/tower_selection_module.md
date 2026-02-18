@@ -97,3 +97,20 @@ Integration points:
 - `HeatEngine.gd` applies tower-specific generation/tolerance values, including chaperone cooling hooks.
 - `LevelManager.gd` loads `res://levels/demo/*.json` data-driven campaign levels.
 - `TutorialManager.gd` tracks step progression and completion persistence per demo level.
+
+## v0.00.7 Mobile-First Playability Additions
+
+- `res://ui/level_hud.tscn` is the shared touch HUD for all tower levels.
+- `TowerSelectionPanel.gd` now renders large (56dp+) horizontal cards with tap-select and long-press tooltip behavior.
+- `TowerPlacementController.gd` owns touch-native placement state (drag ghost preview + release-to-place + cancel paths).
+- Two-finger tap remains mapped to instant level retry for rapid mobile iteration.
+- Placement preview now surfaces live fold context through bond-line rendering, projected heat pressure, and stability guidance.
+- Live HUD damage (`DamageTracker`) and end-level score modal (`level_complete.tscn`) complete the combat feedback loop.
+
+### New Runtime Wiring
+
+- `LevelScene` instantiates:
+  - `LevelHUD` (top bar, bottom dock, side speed control)
+  - `TowerPlacementController` (single source of truth for touch placement)
+  - `LevelCompleteScreen` (modal post-wave summary)
+- `DamageTracker` is autoloaded in `project.godot` and records per-tower contribution for scoring.
