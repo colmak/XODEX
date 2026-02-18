@@ -114,3 +114,34 @@ Integration points:
   - `TowerPlacementController` (single source of truth for touch placement)
   - `LevelCompleteScreen` (modal post-wave summary)
 - `DamageTracker` is autoloaded in `project.godot` and records per-tower contribution for scoring.
+
+## v0.00.9 Vertical Mobile Layout + Geometric Tower Cards
+
+The level UI now follows a portrait-first split layout:
+
+```text
+┌────────────────────────────────────────────┐
+│ Top Section (~65%)                         │
+│  - Arena viewport (uniform square grid)    │
+│  - River path + spawn pores + bond threads │
+├────────────────────────────────────────────┤
+│ Bottom Section (~35%)                      │
+│  - Horizontal tower-card scroller (8 cards)│
+│  - EN + 中文 + Русский per card            │
+│  - Menu bar: Pause | Speed | Retry | Set   │
+└────────────────────────────────────────────┘
+```
+
+### Pre-wave placement phase
+
+- All levels boot into a **PREPARE YOUR PROTEIN FOLD** overlay.
+- `START FIRST WAVE` begins combat after setup.
+- Placement remains active before wave start, allowing unlimited planning time.
+
+### Geometric tower presentation
+
+- Each tower card and in-arena glyph uses the v0.00.4 geometric mapping (circle/square/triangles/diamond/oval/rectangle/pentagon).
+- Tower labels render with multilingual naming fields from `tower_definitions.json`:
+  - `display_name` (English)
+  - `display_name_zh` (Chinese)
+  - `display_name_ru` (Russian)

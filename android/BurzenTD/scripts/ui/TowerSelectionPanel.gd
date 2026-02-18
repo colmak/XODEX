@@ -1,4 +1,4 @@
-# GODOT 4.6.1 STRICT – MOBILE UI v0.00.7
+# GODOT 4.6.1 STRICT – VERTICAL LAYOUT + GEOMETRIC TOWERS v0.00.9
 extends Control
 
 class_name TowerSelectionPanel
@@ -15,7 +15,7 @@ var active_press_id: String = ""
 var press_elapsed: float = 0.0
 var long_press_fired: bool = false
 
-@onready var card_container: HBoxContainer = %CardContainer
+@onready var card_container: BoxContainer = %CardContainer
 
 func _ready() -> void:
 	module = TowerSelectionUI.new()
@@ -41,9 +41,15 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	var vbox: VBoxContainer = VBoxContainer.new()
 	card.add_child(vbox)
 	var title: Label = Label.new()
-	title.text = str(entry.get("display_name", "Tower"))
+	var shape: String = str(Dictionary(entry.get("visuals", {})).get("shape", "circle"))
+	title.text = "%s  %s" % [_shape_glyph(shape), str(entry.get("display_name", "Tower"))]
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(title)
+	var multi: Label = Label.new()
+	multi.text = "%s\n%s" % [str(entry.get("display_name_zh", "")), str(entry.get("display_name_ru", ""))]
+	multi.modulate = Color(0.84, 0.9, 1.0, 1.0)
+	multi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(multi)
 	var role: Label = Label.new()
 	role.text = str(entry.get("folding_role", ""))
 	role.modulate = Color(0.75, 0.85, 1.0, 1.0)
@@ -62,6 +68,27 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	)
 	card_container.add_child(card)
 	cards[str(entry.get("tower_id", ""))] = card
+
+func _shape_glyph(shape: String) -> String:
+	match shape:
+		"circle":
+			return "●"
+		"rounded_square":
+			return "▣"
+		"triangle_up":
+			return "▲"
+		"triangle_down":
+			return "▼"
+		"diamond":
+			return "◆"
+		"oval":
+			return "⬭"
+		"rectangle":
+			return "▬"
+		"pentagon":
+			return "⬟"
+		_:
+			return "◉"
 
 func _is_recommended(entry: Dictionary, global_heat_ratio: float) -> bool:
 	var heat_gen: float = float(entry.get("heat_gen_rate", 0.0))
