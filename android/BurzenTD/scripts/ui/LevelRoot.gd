@@ -9,7 +9,7 @@ signal pause_pressed
 signal speed_changed(multiplier: float)
 signal retry_pressed
 signal settings_pressed
-signal settings_changed(user_settings: Dictionary)
+signal settings_changed(settings_payload: Dictionary)
 signal start_wave_pressed
 signal tower_upgrade_requested(tower_index: int)
 signal tower_sell_requested(tower_index: int, sell_value: int)
