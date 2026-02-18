@@ -15,7 +15,7 @@ var active_press_id: String = ""
 var press_elapsed: float = 0.0
 var long_press_fired: bool = false
 
-@onready var card_container: HBoxContainer = %CardContainer
+@onready var card_container: BoxContainer = %CardContainer
 
 func _ready() -> void:
 	module = TowerSelectionUI.new()

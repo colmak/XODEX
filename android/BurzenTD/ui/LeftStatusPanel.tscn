@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/LeftStatusPanel.gd" id="1_left"]
+
+[node name="LeftStatusPanel" type="CanvasLayer"]
+script = ExtResource("1_left")
+
+[node name="LeftPanel" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_right = 160.0
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 14.0
+offset_right = -10.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="LeftPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeatMeter" type="TextureProgressBar" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+max_value = 100.0
+fill_mode = 3
+value = 0.0
+
+[node name="HeatLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Heat 0°C"
+
+[node name="WaveLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Wave 1/1"
+
+[node name="TimerLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Timer 0.0s"
+
+[node name="LivesLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Leaks 3"
+
+[node name="DamageLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Damage 0"
+
+[node name="PauseButton" type="Button" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+text = "Pause"
+
+[node name="StatusLabel" type="Label" parent="LeftPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+text = ""
