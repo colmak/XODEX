@@ -81,6 +81,7 @@ func _ready() -> void:
 	level_root.tower_info_requested.connect(func(selection: Dictionary) -> void: level_root.set_status(str(selection.get("tooltip", "No tooltip."))))
 	level_root.start_wave_pressed.connect(_start_first_wave)
 	level_root.tower_upgrade_requested.connect(_upgrade_tower)
+	level_root.tower_sell_requested.connect(_sell_tower)
 	level_root.settings_changed.connect(_on_settings_changed)
 	placement_controller = TowerPlacementController.new()
 	placement_controller.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -435,6 +436,13 @@ func _upgrade_tower(tower_index: int) -> void:
 	tower_data["radius"] = float(tower_data.get("radius", arena_viewport.cell_size * 2.8)) * 1.05
 	level_root.set_status("Bond formed: helix twist applied (+12 DPS equivalent).")
 
+func _sell_tower(tower_index: int, sell_value: int) -> void:
+	if tower_index < 0 or tower_index >= towers.size():
+		return
+	towers.remove_at(tower_index)
+	heat_spent = maxi(0, heat_spent - sell_value)
+	level_root.set_status("Tower sold: +%d heat credits returned." % sell_value)
+
 func _refresh_tower_bonds() -> void:
 	var graph_input: Array[Dictionary] = []
 	for t: Dictionary in towers:
@@ -483,7 +491,9 @@ func _update_side_panels() -> void:
 	if level_root != null:
 		var wave_enemy_total: int = max(enemies_per_wave, 1)
 		level_root.set_metrics(min(wave_index, wave_count), wave_count, enemies.size(), wave_enemy_total, lives, heat_ratio)
-		level_root.set_wave_preview("▲ ● ◆", "Hot wave incoming")
+		var wave_hint: String = "Boss marker" if wave_index == wave_count else "Resistance: Thermal"
+		var reward_hint: String = "Reward +%d | Armor: Medium" % (20 + wave_index * 5)
+		level_root.set_wave_preview("▲×3  ●×2  ◆×1\n%s" % wave_hint, reward_hint)
 		level_root.configure_towers(heat_ratio, unlocked_towers)
 
 func _update_effects(delta: float) -> void:
