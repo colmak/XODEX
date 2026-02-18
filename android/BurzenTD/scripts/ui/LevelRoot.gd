@@ -55,10 +55,12 @@ func set_metrics(wave: int, wave_total: int, lives: int, heat_ratio: float) -> v
 func set_status(message: String) -> void:
 	status_label.text = message
 
-func set_pre_wave_visible(is_visible: bool) -> void:
-	prep_overlay.visible = is_visible
+func set_pre_wave_visible(visible_state: bool) -> void:
+	prep_overlay.visible = visible_state
 
 func _on_speed_pressed() -> void:
+	if not is_inside_tree() or get_tree().paused:
+		return
 	speed_mode = (speed_mode + 1) % SPEEDS.size()
 	var speed: float = SPEEDS[speed_mode]
 	speed_button.text = "×%.0f" % speed

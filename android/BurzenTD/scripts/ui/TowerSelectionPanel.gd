@@ -13,13 +13,18 @@ var cards: Dictionary = {}
 var active_press_id: String = ""
 var press_elapsed: float = 0.0
 var long_press_fired: bool = false
+var is_collapsed: bool = false
 
+@onready var collapse_button: Button = %CollapseButton
+@onready var content: VBoxContainer = %Content
 @onready var card_container: BoxContainer = %CardContainer
 
 func _ready() -> void:
 	module = TowerSelectionUI.new()
 	add_child(module)
 	module.hide()
+	collapse_button.pressed.connect(_on_collapse_pressed)
+	_set_collapsed(false)
 	set_process(true)
 
 func configure(global_heat_ratio: float, unlocked_towers: Array[String]) -> void:
@@ -139,3 +144,17 @@ func _process(delta: float) -> void:
 		long_press_fired = true
 		var selected: Dictionary = module.select_tower(active_press_id)
 		emit_signal("tower_card_long_pressed", selected)
+
+func _on_collapse_pressed() -> void:
+	_set_collapsed(not is_collapsed)
+
+func _set_collapsed(next_collapsed: bool) -> void:
+	is_collapsed = next_collapsed
+	content.visible = not is_collapsed
+	collapse_button.text = "▼ Towers" if is_collapsed else "▲ Towers"
+
+func set_collapse_highlight(enabled: bool) -> void:
+	if enabled:
+		collapse_button.modulate = Color(1.0, 0.95, 0.4, 1.0)
+	else:
+		collapse_button.modulate = Color(1.0, 1.0, 1.0, 1.0)

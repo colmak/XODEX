@@ -12,12 +12,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 0
 
 [node name="TopSection" type="PanelContainer" parent="Root"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-stretch_ratio = 65.0
+stretch_ratio = 2.0
 
 [node name="TopMargin" type="MarginContainer" parent="Root/TopSection"]
 layout_mode = 2
@@ -51,7 +52,7 @@ text = "Leaks 3"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-stretch_ratio = 35.0
+stretch_ratio = 1.0
 
 [node name="BottomVBox" type="VBoxContainer" parent="Root/BottomSection"]
 layout_mode = 2
@@ -61,21 +62,30 @@ theme_override_constants/separation = 10
 [node name="TowerSelectionPanel" type="Control" parent="Root/BottomSection/BottomVBox"]
 unique_name_in_owner = true
 script = ExtResource("2_tower_panel")
-custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Scroll" type="ScrollContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Header" type="HBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel"]
+layout_mode = 2
+
+[node name="CollapseButton" type="Button" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 54)
+layout_mode = 2
+text = "▲ Towers"
+
+[node name="Content" type="VBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Content"]
+layout_mode = 2
+size_flags_vertical = 3
 horizontal_scroll_mode = 1
 vertical_scroll_mode = 2
 
-[node name="CardContainer" type="HBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Scroll"]
+[node name="CardContainer" type="HBoxContainer" parent="Root/BottomSection/BottomVBox/TowerSelectionPanel/Content/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
