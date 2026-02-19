@@ -3,11 +3,11 @@ shader_type canvas_item;
 uniform float fill_ratio : hint_range(0.0, 1.0) = 0.0;
 uniform float ring_radius : hint_range(0.05, 0.50) = 0.34;
 uniform float ring_thickness : hint_range(0.005, 0.20) = 0.05;
-uniform vec4 cool_color : source_color = vec4(0.22, 0.74, 0.97, 1.0);
-uniform vec4 stressed_color : source_color = vec4(0.96, 0.62, 0.04, 1.0);
-uniform vec4 critical_color : source_color = vec4(0.94, 0.27, 0.27, 1.0);
+uniform vec4 cool_color : source_color = vec4(0.34, 0.40, 0.45, 1.0);
+uniform vec4 stressed_color : source_color = vec4(0.48, 0.42, 0.35, 1.0);
+uniform vec4 critical_color : source_color = vec4(0.58, 0.36, 0.34, 1.0);
 uniform float base_opacity : hint_range(0.0, 1.0) = 0.30;
-uniform float glow_strength : hint_range(0.0, 3.0) = 1.0;
+uniform float glow_strength : hint_range(0.0, 3.0) = 0.12;
 
 float map_heat_opacity(float ratio) {
 	if (ratio <= 0.5) {
@@ -44,5 +44,5 @@ void fragment() {
 	float glow = pow(glow_band, 2.0) * fill_mask * glow_strength * (0.2 + 0.8 * fill_ratio);
 
 	float alpha = ring_mask * fill_mask * opacity;
-	COLOR = vec4(color.rgb + glow * color.rgb, alpha + glow * 0.35 * opacity);
+	COLOR = vec4(mix(color.rgb, vec3(0.25, 0.23, 0.22), 0.18) + glow * color.rgb * 0.25, alpha + glow * 0.10 * opacity);
 }

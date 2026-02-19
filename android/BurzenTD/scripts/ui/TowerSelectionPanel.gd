@@ -8,6 +8,11 @@ signal tower_card_long_pressed(selection: Dictionary)
 const LONG_PRESS_SECONDS: float = 0.45
 const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
 const TOWER_DEFINITIONS_PATH: String = "res://data/towers/tower_definitions.json"
+const MUTE_CARD_COLOR: Color = Color(0.20, 0.24, 0.28, 0.92)
+const MUTE_ICON_COLOR: Color = Color(0.74, 0.78, 0.80, 1.0)
+const MUTE_ROLE_COLOR: Color = Color(0.68, 0.71, 0.74, 1.0)
+const MUTE_STATS_COLOR: Color = Color(0.77, 0.79, 0.74, 1.0)
+const LOCKED_CARD_ALPHA: float = 0.56
 
 var module: TowerSelectionUI
 var cards: Dictionary = {}
@@ -18,16 +23,19 @@ var is_collapsed: bool = false
 var language_code: String = "EN"
 var last_global_heat_ratio: float = 0.0
 var last_unlocked_towers: Array[String] = []
+var expand_available: bool = true
+var expand_preview: bool = true
 
-@onready var collapse_button: Button = %CollapseButton
-@onready var content: VBoxContainer = %Content
+@onready var collapse_button: Button = get_node_or_null("%CollapseButton") as Button
+@onready var content: VBoxContainer = get_node_or_null("%Content") as VBoxContainer
 @onready var card_container: BoxContainer = %CardContainer
 
 func _ready() -> void:
 	module = TowerSelectionUI.new()
 	add_child(module)
 	module.hide()
-	collapse_button.pressed.connect(_on_collapse_pressed)
+	if collapse_button != null:
+		collapse_button.pressed.connect(_on_collapse_pressed)
 	_set_collapsed(false)
 	set_process(true)
 
@@ -45,10 +53,38 @@ func _refresh_cards() -> void:
 		visible = module.visible_catalog(last_global_heat_ratio, last_unlocked_towers)
 	if visible.is_empty():
 		visible = module.catalog
+	var selectable: Array[Dictionary] = []
+	var preview_only: Array[Dictionary] = []
 	for entry: Dictionary in visible:
-		_create_card(entry, last_global_heat_ratio)
+		var tower_id: String = str(entry.get("tower_id", ""))
+		var selectable_now: bool = last_unlocked_towers.is_empty() or last_unlocked_towers.has(tower_id)
+		if selectable_now:
+			selectable.append(entry)
+		else:
+			preview_only.append(entry)
 
-func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
+	_create_section_header("Selectable Towers", true, expand_available, _toggle_available)
+	if expand_available:
+		for entry: Dictionary in selectable:
+			_create_card(entry, last_global_heat_ratio, true)
+
+	if not preview_only.is_empty():
+		_create_section_header("Preview Towers (Visible Before Wave Start)", true, expand_preview, _toggle_preview)
+		if expand_preview:
+			for entry: Dictionary in preview_only:
+				_create_card(entry, last_global_heat_ratio, false)
+
+func _create_section_header(title: String, expandable: bool, expanded: bool, toggle_method: Callable) -> void:
+	var button: Button = Button.new()
+	button.custom_minimum_size = Vector2(280.0, 42.0)
+	button.size_flags_horizontal = Control.SIZE_FILL
+	button.flat = true
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.text = "%s %s" % ["▼" if expanded else "▶", title] if expandable else title
+	button.pressed.connect(toggle_method)
+	card_container.add_child(button)
+
+func _create_card(entry: Dictionary, global_heat_ratio: float, selectable_now: bool) -> void:
 	var card: PanelContainer = PanelContainer.new()
 	card.custom_minimum_size = CARD_MIN_SIZE
 	card.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -67,7 +103,7 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 		var icon: Label = Label.new()
 		icon.text = _shape_glyph(shape)
 		icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon.modulate = Color(0.75, 0.92, 1.0, 1.0)
+		icon.modulate = MUTE_ICON_COLOR
 		icon.add_theme_font_size_override("font_size", 38)
 		vbox.add_child(icon)
 	var title: Label = Label.new()
@@ -77,14 +113,14 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	title.add_theme_font_size_override("font_size", 16)
 	title.modulate = Color("e0e0e0")
 	vbox.add_child(title)
-	card.self_modulate = Color("1e3a52")
+	card.self_modulate = MUTE_CARD_COLOR
 	var role: Label = Label.new()
 	role.text = str(entry.get("folding_role", ""))
-	role.modulate = Color(0.75, 0.85, 1.0, 1.0)
+	role.modulate = MUTE_ROLE_COLOR
 	vbox.add_child(role)
 	var stats: Label = Label.new()
 	stats.text = "Cost %d | Heat %.2f | Tol %.2f" % [int(entry.get("build_cost", 0)), float(entry.get("heat_gen_rate", 0.0)), float(entry.get("heat_tolerance_value", 0.0))]
-	stats.modulate = Color(0.85, 0.95, 0.82, 1.0)
+	stats.modulate = MUTE_STATS_COLOR
 	vbox.add_child(stats)
 	var heat_bar: ProgressBar = ProgressBar.new()
 	heat_bar.min_value = 0.0
@@ -99,13 +135,20 @@ func _create_card(entry: Dictionary, global_heat_ratio: float) -> void:
 	tolerance_bar.show_percentage = false
 	vbox.add_child(tolerance_bar)
 	card.tooltip_text = str(entry.get("tooltip", ""))
-	if _is_recommended(entry, global_heat_ratio):
+	if selectable_now and _is_recommended(entry, global_heat_ratio):
 		var badge: Label = Label.new()
 		badge.text = "Recommended"
-		badge.modulate = Color(0.5, 1.0, 0.6, 1.0)
+		badge.modulate = Color(0.73, 0.79, 0.65, 1.0)
 		vbox.add_child(badge)
+	if not selectable_now:
+		card.modulate = Color(1.0, 1.0, 1.0, LOCKED_CARD_ALPHA)
+		var lock_label: Label = Label.new()
+		lock_label.text = "Visible pre-wave • unlock to place"
+		lock_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lock_label.modulate = Color(0.82, 0.80, 0.78, 1.0)
+		vbox.add_child(lock_label)
 	card.gui_input.connect(func(event: InputEvent) -> void:
-		_handle_card_input(event, str(entry.get("tower_id", "")), entry)
+		_handle_card_input(event, str(entry.get("tower_id", "")), entry, selectable_now)
 	)
 	card_container.add_child(card)
 	cards[str(entry.get("tower_id", ""))] = card
@@ -138,7 +181,9 @@ func _is_recommended(entry: Dictionary, global_heat_ratio: float) -> bool:
 		return tolerance >= 0.95 or heat_gen <= 0.4
 	return tolerance >= 0.7 and heat_gen <= 1.0
 
-func _handle_card_input(event: InputEvent, tower_id: String, entry: Dictionary) -> void:
+func _handle_card_input(event: InputEvent, tower_id: String, entry: Dictionary, selectable_now: bool) -> void:
+	if not selectable_now:
+		return
 	if event is InputEventScreenTouch:
 		var touch: InputEventScreenTouch = event
 		if touch.pressed:
@@ -168,18 +213,30 @@ func _process(delta: float) -> void:
 func _on_collapse_pressed() -> void:
 	_set_collapsed(not is_collapsed)
 
+func _toggle_available() -> void:
+	expand_available = not expand_available
+	_refresh_cards()
+
+func _toggle_preview() -> void:
+	expand_preview = not expand_preview
+	_refresh_cards()
+
 func _set_collapsed(next_collapsed: bool) -> void:
 	is_collapsed = next_collapsed
-	content.visible = not is_collapsed
-	collapse_button.text = "▼ Towers" if is_collapsed else "▲ Towers"
+	if content != null:
+		content.visible = not is_collapsed
+	if collapse_button != null:
+		collapse_button.text = "▼ Towers" if is_collapsed else "▲ Towers"
 	if not is_collapsed:
 		_refresh_cards()
 
 func set_collapse_highlight(enabled: bool) -> void:
 	if enabled:
-		collapse_button.modulate = Color(1.0, 0.95, 0.4, 1.0)
+		if collapse_button != null:
+			collapse_button.modulate = Color(1.0, 0.95, 0.4, 1.0)
 	else:
-		collapse_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		if collapse_button != null:
+			collapse_button.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 func set_language(next_language: String) -> void:
 	language_code = next_language.to_upper()
