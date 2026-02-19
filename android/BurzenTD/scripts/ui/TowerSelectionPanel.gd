@@ -8,11 +8,11 @@ signal tower_card_long_pressed(selection: Dictionary)
 const LONG_PRESS_SECONDS: float = 0.45
 const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
 const TOWER_DEFINITIONS_PATH: String = "res://data/towers/tower_definitions.json"
-const MUTE_CARD_COLOR: Color = Color(0.30, 0.34, 0.37, 0.95)
-const MUTE_ICON_COLOR: Color = Color(0.86, 0.89, 0.90, 1.0)
-const MUTE_ROLE_COLOR: Color = Color(0.80, 0.83, 0.85, 1.0)
-const MUTE_STATS_COLOR: Color = Color(0.88, 0.89, 0.84, 1.0)
-const LOCKED_CARD_ALPHA: float = 0.70
+const MUTE_CARD_COLOR: Color = Color(0.20, 0.24, 0.28, 0.92)
+const MUTE_ICON_COLOR: Color = Color(0.74, 0.78, 0.80, 1.0)
+const MUTE_ROLE_COLOR: Color = Color(0.68, 0.71, 0.74, 1.0)
+const MUTE_STATS_COLOR: Color = Color(0.77, 0.79, 0.74, 1.0)
+const LOCKED_CARD_ALPHA: float = 0.56
 
 var module: TowerSelectionUI
 var cards: Dictionary = {}
