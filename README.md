@@ -8,6 +8,8 @@ Open-source Android + simulation prototype for **BURZEN TD**, currently tracked 
 
 This repository intentionally keeps **prototype runtime stability** and **forward design experiments** side by side so contributors can iterate without blocking core gameplay.
 
+It now also includes a **serverless web module** for text-link level exchange, hosted via GitHub Pages under `docs/`.
+
 ---
 
 ## Quick Start (contributors)
@@ -24,6 +26,19 @@ For CLI regression simulation focused on the demo campaign shell, run:
 
 ```bash
 android/BurzenTD/tests/cli_sim/cli_regression.sh
+```
+
+### Quick Start (GitHub Pages web module)
+
+1. Open `docs/index.html` through GitHub Pages or a local static server.
+2. Go to `docs/editor/` to build a level in-browser.
+3. Generate a link and share it as text.
+4. Recipients open `docs/play/#XDX1...` and play instantly.
+
+Run locally:
+
+```bash
+python -m http.server 4173 --directory docs
 ```
 
 ---
@@ -63,6 +78,14 @@ BURZEN TD uses incremental pre-1.0 semantics:
 
 ## 2) Implemented Capabilities (Today)
 
+### Web text-link exchange capabilities (`docs/`)
+- Browser editor with grid path authoring, wave authoring, and heat budget input
+- Deterministic 2D Canvas player with fixed timestep loop
+- URL-fragment level exchange (`#XDX1.<payload>.<checksum>`), no backend/API
+- Compact schema codec with compression and checksum validation
+- Corruption/tamper rejection and hard safety caps in the decoder/validator
+- Fork flow: open a play link in editor, modify, re-encode, reshare
+
 ### Gameplay/runtime capabilities
 - Main menu and level routing shell
 - Procedural path variants and level progression
@@ -90,12 +113,52 @@ BURZEN TD uses incremental pre-1.0 semantics:
 - **Python simulation tests:** `simulation/`
 - **Prototype formal experiments (Haskell):** `simulation/haskell/`
 - **Product/engineering docs:** `docs/`
+- **GitHub Pages web module:** `docs/index.html`, `docs/editor/`, `docs/play/`, `docs/core/`
 
 Design principle: keep rendering/input logic in Godot while preserving deterministic mechanics models in simulation layers for rapid verification.
 
+For the web module, design principle is: **all state client-side, URL-encoded, deterministic replay behavior, and zero backend dependencies**.
+
 ---
 
-## 4) Build & Validation
+## 4) Web Module Technical Overview (Text-Link Level Exchange)
+
+### Hosting model
+- Static hosting only (GitHub Pages serving `docs/`)
+- No database, no API, no server authority
+- Share payload is carried entirely in URL fragment
+
+### Core files
+- `docs/core/schema.json` — canonical Level Schema v1
+- `docs/core/codec.js` — serialize/compress/encode/checksum/decode/validate
+- `docs/core/game.js` — deterministic browser game loop
+- `docs/editor/main.js` — level editor and share-link generator
+- `docs/play/main.js` — token load, validation, and play boot
+
+### Encoding flow
+`level object -> compact schema -> JSON -> LZ-style compression -> base64url -> checksum -> versioned token`
+
+Token format:
+`#XDX1.<payload>.<checksum8>`
+
+### Validation and safety caps
+- Grid size, path length, wave count, spawn counts, and heat are bounded
+- Rejects malformed, negative, NaN, or Infinity values
+- Rejects checksum mismatches and unsupported versions
+- Fails closed with `Invalid or corrupted level.` rather than crashing
+
+### Determinism rules
+- Fixed simulation timestep in the browser loop
+- Seeded pseudo-random helper derived from token
+- No backend-authoritative corrections
+
+### URL budget target
+- Encoder enforces a maximum token size budget (1200 chars target)
+- Supports practical sharing over SMS/Discord/email
+
+---
+
+## 5) Build & Validation
 
 ### Build Android APK
 ```bash
@@ -115,7 +178,7 @@ This executes simulation tests plus release metadata/export dry-run checks.
 
 ---
 
-## 5) Controls (Current Runtime)
+## 6) Controls (Current Runtime)
 
 ### Menu
 - **Play:** starts a procedural run from Level 1
@@ -127,9 +190,32 @@ This executes simulation tests plus release metadata/export dry-run checks.
 - **Long-press tower:** trigger heat highlight pulse
 - **Two-finger tap:** retry current level seed
 
+### Web player controls
+- **Tap/click on canvas:** emit pulse rings to clear enemies
+- **Open Edit link:** fork the same payload in the editor and regenerate
+
 ---
 
-## 6) Cross-Compatible Open-Source Implementation Notes
+## 7) Current Functions by Surface
+
+### Godot runtime (`android/BurzenTD`)
+- Mobile-first TD prototype loop
+- Thermal tower behavior and procedural progression shell
+- Demo campaign level flow and UI routing
+
+### Simulation (`simulation/`)
+- Deterministic mechanic validation
+- Thermal and folding-related model experiments
+- Regression-style Python checks for balancing/system behavior
+
+### Web module (`docs/`)
+- Shareable level authoring directly in browser
+- URL-based codec and integrity verification
+- Instant browser play with no infrastructure cost
+
+---
+
+## 8) Cross-Compatible Open-Source Implementation Notes
 
 BURZEN TD is prototype-focused, but intentionally aligns with widely used open-source game/sim stacks for easier contributor portability.
 
@@ -167,7 +253,7 @@ These references are included to encourage contributors to adopt familiar open-s
 
 ---
 
-## 7) Key Design & Engineering Documents
+## 9) Key Design & Engineering Documents
 
 - Extensibility guide: `docs/extensibility_guide.md`
 - Engineering handoff plan: `docs/engineering_handoff_plan_v003.md`
@@ -175,18 +261,39 @@ These references are included to encourage contributors to adopt familiar open-s
 - Tower selection module (heat-aware residue placement): `docs/tower_selection_module.md`
 - Moon-mission SPOC/NESOROX/WASMUTABLE integration: `docs/moon_mission_spoc_nesorox_wasmutable_integration.md`
 - v0.00.4.0 scene tree/UI mockup notes: `docs/td_v0_00_4_scene_tree_and_ui_mockup.md`
+- Web module creator context: `docs/websim_module_level_creator.md`
 
 ---
 
-## 8) Roadmap Snapshot
+## 10) Future Design Goals (near/mid-term)
+
+### Web module goals
+- Expand editor UX with touch-first path editing and richer wave presets
+- Add optional service worker/offline caching for resilient mobile play
+- Add decentralized lineage metadata (`r`) tooling for explicit fork ancestry
+- Keep schema compatibility stable for future Godot client ingestion
+
+### Shared goals across web + Godot
+- Maintain one canonical level schema for all clients
+- Preserve deterministic gameplay semantics across runtimes
+- Improve balance tooling and visualization without introducing backend coupling
+
+### Godot-specific goals
+- Continue 3D/advanced rendering exploration as optional enhancement client
+- Reuse same level schema + codec semantics where platform allows
+
+---
+
+## 11) Roadmap Snapshot
 
 - **v0.00.4.x:** expanded tower classes + richer overlays + safer placement/state checks
 - **v0.00.5.x:** adaptive wave composition and stronger mob defense typing
 - **v0.01.0:** deeper WASMUTABLE-style rule shifts and specialization systems
+- **Web text-link track:** stronger editor ergonomics + schema continuity + share-flow hardening
 
 ---
 
-## 9) Repository Hygiene
+## 12) Repository Hygiene
 
 - Simulation logs go under `simulation/logs/` (ignored except marker files)
 - Signing keys (`*.jks`, `*.keystore`) must remain out of source control
@@ -194,7 +301,7 @@ These references are included to encourage contributors to adopt familiar open-s
 
 ---
 
-## 10) First Launch Instructions – zero errors expected
+## 13) First Launch Instructions – zero errors expected
 
 For the `v0.00.5.0` milestone, the Godot prototype scripts are now updated for strict typed parsing expectations.
 
@@ -211,7 +318,7 @@ Protein Phase 1 scaffolding is included in:
 - `android/BurzenTD/scripts/TowerGraph.gd`
 - `android/BurzenTD/scripts/td_v0_00_4_mockup.gd` (typed integration + bond-renderer stub)
 
-## 11) Play the Demo Campaign in 2 clicks
+## 14) Play the Demo Campaign in 2 clicks
 
 1. Open `android/BurzenTD/project.godot` in Godot 4.6.1.
 2. Press **Play** then tap **Demo Campaign** and choose any of the five tutorial levels.
