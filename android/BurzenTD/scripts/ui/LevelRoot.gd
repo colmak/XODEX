@@ -44,6 +44,7 @@ var user_settings: Dictionary = {
 @onready var wave_preview_panel: PanelContainer = %WavePreviewPanel
 @onready var wave_preview_label: RichTextLabel = %WavePreviewLabel
 @onready var wave_preview_toggle_button: Button = %WavePreviewToggleButton
+@onready var wave_preview_close_button: Button = %WavePreviewCloseButton
 @onready var tower_selection_panel: Control = %TowerSelectionPanel
 @onready var place_tower_button: Button = %PlaceTowerButton
 @onready var upgrade_info_button: Button = %UpgradeInfoButton
@@ -54,7 +55,9 @@ var user_settings: Dictionary = {
 @onready var tower_info_label: RichTextLabel = %TowerInfoLabel
 @onready var tower_upgrade_button: Button = %TowerUpgradeButton
 @onready var tower_sell_button: Button = %TowerSellButton
+@onready var tower_info_close_button: Button = %TowerInfoCloseButton
 @onready var pause_modal: PanelContainer = %PauseModal
+@onready var pause_close_button: Button = %PauseCloseButton
 @onready var resume_button: Button = %ResumeButton
 @onready var settings_button: Button = %SettingsButton
 @onready var quit_button: Button = %QuitButton
@@ -67,13 +70,16 @@ func _ready() -> void:
 	sell_button.pressed.connect(_on_sell_pressed)
 	tower_upgrade_button.pressed.connect(_on_upgrade_pressed)
 	tower_sell_button.pressed.connect(_on_sell_pressed)
+	tower_info_close_button.pressed.connect(hide_tower_info)
 	wave_preview_toggle_button.pressed.connect(_on_toggle_wave_preview)
+	wave_preview_close_button.pressed.connect(func() -> void: wave_preview_panel.visible = false)
 	resume_button.pressed.connect(_on_pause_pressed)
+	pause_close_button.pressed.connect(_on_pause_pressed)
 	settings_button.pressed.connect(func() -> void: emit_signal("settings_pressed"))
 	quit_button.pressed.connect(func() -> void: emit_signal("retry_pressed"))
 	tower_selection_panel.connect("tower_card_pressed", func(selection: Dictionary) -> void: emit_signal("tower_selected", selection))
 	tower_selection_panel.connect("tower_card_long_pressed", func(selection: Dictionary) -> void: emit_signal("tower_info_requested", selection))
-	for button: Button in [place_tower_button, upgrade_info_button, sell_button, speed_button, pause_button, tower_upgrade_button, tower_sell_button, resume_button, settings_button, quit_button, wave_preview_toggle_button]:
+	for button: Button in [place_tower_button, upgrade_info_button, sell_button, speed_button, pause_button, tower_upgrade_button, tower_sell_button, resume_button, settings_button, quit_button, wave_preview_toggle_button, wave_preview_close_button, tower_info_close_button, pause_close_button]:
 		button.button_down.connect(func() -> void: _pulse_button(button, 0.94))
 		button.button_up.connect(func() -> void: _pulse_button(button, 1.0))
 	tower_info_panel.visible = false
@@ -129,9 +135,9 @@ func set_metrics(wave: int, wave_total: int, enemies_alive: int, enemies_total: 
 	var heat_budget: int = int(round(100.0 * heat_ratio))
 	credits_label.text = "⚗ %d" % max(0, 100 - heat_budget)
 	if lives <= 2:
-		lives_label.modulate = Color(1.0, 0.5, 0.5)
+		lives_label.modulate = Color(0.86, 0.66, 0.66)
 	else:
-		lives_label.modulate = Color(1.0, 1.0, 1.0)
+		lives_label.modulate = Color(0.92, 0.92, 0.92)
 
 func set_wave_preview(icons_text: String, forecast: String) -> void:
 	wave_preview_label.text = "[b]Next Wave[/b]\n%s\n%s" % [icons_text, forecast]

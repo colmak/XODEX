@@ -5,6 +5,8 @@ class_name ArenaViewport
 
 const GRID_COLUMNS_DEFAULT: int = 12
 const GRID_ROWS_DEFAULT: int = 8
+const MUTED_SAT_LIMIT: float = 0.28
+const MUTED_VALUE_LIMIT: float = 0.72
 
 var arena_rect: Rect2 = Rect2(160.0, 120.0, 400.0, 920.0)
 var grid_columns: int = GRID_COLUMNS_DEFAULT
@@ -98,8 +100,8 @@ func _world_to_draw(point: Vector2) -> Vector2:
 	return arena_rect.get_center() + (point - camera_center) * camera_zoom
 
 func _draw() -> void:
-	var bg_color: Color = Color("0a1a2a")
-	var frame_color: Color = Color("040713")
+	var bg_color: Color = Color("1a1f25")
+	var frame_color: Color = Color("0f1318")
 	if color_scheme == "High Viz":
 		bg_color = Color("ffffff")
 		frame_color = Color("e6e6e6")
@@ -114,10 +116,10 @@ func _draw() -> void:
 	_draw_enemies()
 	if placement_active:
 		var g: Vector2 = _world_to_draw(ghost_position)
-		var ghost_color: Color = Color("32cd32") if placement_valid else Color("ff4500")
+		var ghost_color: Color = Color("9caf91") if placement_valid else Color("af7f72")
 		ghost_color.a = 0.33
 		draw_circle(g, 26.0 * camera_zoom, ghost_color)
-		var cue_color: Color = Color("00ffff")
+		var cue_color: Color = Color("7b8588")
 		cue_color.a = 0.4
 		draw_arc(g, 175.0 * camera_zoom, 0.0, TAU, 56, cue_color, 2.0)
 		draw_arc(g, 32.0 * camera_zoom, 0.0, TAU, 40, ghost_color, 4.0)
@@ -131,18 +133,18 @@ func _draw_grid() -> void:
 	var cell_h: float = arena_rect.size.y / float(grid_rows)
 	for x: int in range(grid_columns + 1):
 		var px: float = arena_rect.position.x + x * cell_w
-		draw_line(Vector2(px, arena_rect.position.y), Vector2(px, arena_rect.end.y), Color(0.0, 1.0, 1.0, grid_opacity), 1.0)
+		draw_line(Vector2(px, arena_rect.position.y), Vector2(px, arena_rect.end.y), Color(0.30, 0.37, 0.42, grid_opacity), 1.0)
 	for y: int in range(grid_rows + 1):
 		var py: float = arena_rect.position.y + y * cell_h
-		draw_line(Vector2(arena_rect.position.x, py), Vector2(arena_rect.end.x, py), Color(0.0, 1.0, 1.0, grid_opacity), 1.0)
+		draw_line(Vector2(arena_rect.position.x, py), Vector2(arena_rect.end.x, py), Color(0.30, 0.37, 0.42, grid_opacity), 1.0)
 	if show_grid_highlights:
 		for point: Vector2 in recommended_spots:
 			var draw_point: Vector2 = _world_to_draw(point)
 			var pulse: float = 0.5 + 0.5 * sin(sim_time * 2.2 + point.x * 0.01)
-			var fill_color: Color = Color("ffd700")
+			var fill_color: Color = Color("8e8460")
 			fill_color.a = 0.2 + pulse * 0.1
 			draw_rect(Rect2(draw_point - Vector2(cell_w * 0.45, cell_h * 0.45), Vector2(cell_w * 0.9, cell_h * 0.9)), fill_color, true)
-			var spot_color: Color = Color("32cd32")
+			var spot_color: Color = Color("8ea086")
 			spot_color.a = 0.35 + pulse * 0.45
 			draw_rect(Rect2(draw_point - Vector2(cell_w * 0.48, cell_h * 0.48), Vector2(cell_w * 0.96, cell_h * 0.96)), spot_color, false, 2.0)
 			draw_string(ThemeDB.fallback_font, draw_point + Vector2(-68.0, -8.0), "Good spot: β-sheet barrier", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("e0e0e0"))
@@ -168,9 +170,9 @@ func _draw_river_glow() -> void:
 	var transformed: PackedVector2Array = PackedVector2Array()
 	for point: Vector2 in path_points:
 		transformed.append(_world_to_draw(point))
-	var glow_color: Color = Color("00bfff")
-	glow_color.a = 0.78
-	draw_polyline(transformed, glow_color, 14.0 * camera_zoom, true)
+	var glow_color: Color = Color("7f8f95")
+	glow_color.a = 0.48
+	draw_polyline(transformed, glow_color, 11.5 * camera_zoom, true)
 
 func _draw_spawn_pores() -> void:
 	if path_points.is_empty():
@@ -178,14 +180,14 @@ func _draw_spawn_pores() -> void:
 	var spawn: Vector2 = _world_to_draw(path_points[0])
 	for i: int in range(3):
 		var radius: float = 17.0 + i * 9.0 + 4.0 * sin(sim_time * 3.2 + float(i))
-		draw_circle(spawn, radius * camera_zoom, Color(0.9, 0.35 + 0.15 * i, 0.95, 0.17))
+		draw_circle(spawn, radius * camera_zoom, Color(0.56 + 0.04 * i, 0.46 + 0.03 * i, 0.42 + 0.02 * i, 0.18))
 
 func _draw_bonds() -> void:
 	for bond: Dictionary in tower_bonds:
 		var p_from: Vector2 = _world_to_draw(Vector2(bond.get("from", Vector2.ZERO)))
 		var p_to: Vector2 = _world_to_draw(Vector2(bond.get("to", Vector2.ZERO)))
 		var intensity: float = clampf(absf(float(bond.get("strength", 0.0))), 0.2, 1.0)
-		draw_line(p_from, p_to, Color(0.45, 1.0, 0.95, 0.25 + intensity * 0.45), 2.0 + 2.0 * intensity)
+		draw_line(p_from, p_to, Color(0.60, 0.68, 0.66, 0.28 + intensity * 0.30), 2.2 + 1.4 * intensity)
 
 func _draw_towers() -> void:
 	var active_ids: Dictionary = {}
@@ -199,19 +201,21 @@ func _draw_towers() -> void:
 		var smoothing_speed: float = maxf(4.0 * draw_delta, 0.06)
 		current_fill = move_toward(current_fill, heat_ratio, smoothing_speed)
 		_heat_bar_display[tower_id] = current_fill
-		var low_color: Color = Color("ffd700")
-		var mid_color: Color = Color("ff8c00")
-		var high_color: Color = Color("ff4500")
+		var low_color: Color = Color("998A6A")
+		var mid_color: Color = Color("A07A60")
+		var high_color: Color = Color("B16D67")
 		if heat_gradient_style == "Colorblind":
-			high_color = Color("4b0082")
+			high_color = Color("8A7DA0")
 		var base: Color = low_color.lerp(mid_color, clampf(heat_ratio * 1.2, 0.0, 1.0))
 		if heat_ratio > 0.5:
 			base = mid_color.lerp(high_color, clampf((heat_ratio - 0.5) * 2.0, 0.0, 1.0))
 		draw_circle(p, 26.0 * camera_zoom, base)
+		draw_circle(p, 29.0 * camera_zoom, Color(0.78, 0.80, 0.78, 0.28))
+		draw_arc(p, 29.0 * camera_zoom, 0.0, TAU, 36, Color(0.86, 0.88, 0.86, 0.32), 2.0, true)
 		_draw_radial_heat_bar(p, current_fill, t)
 		var target: Variant = t.get("last_target", null)
 		if target != null:
-			draw_line(p, _world_to_draw(Vector2(target)), Color(0.3, 0.9, 1.0, 0.65), 3.0)
+			draw_line(p, _world_to_draw(Vector2(target)), Color(0.62, 0.70, 0.72, 0.55), 2.4)
 	for key: Variant in _heat_bar_display.keys():
 		if not active_ids.has(int(key)):
 			_heat_bar_display.erase(key)
@@ -222,9 +226,9 @@ func _draw_radial_heat_bar(center: Vector2, heat_ratio: float, tower_data: Dicti
 	var radial_bar: Dictionary = Dictionary(thermal_visuals.get("radial_bar", {}))
 	if not bool(radial_bar.get("enabled", true)):
 		return
-	var cool_color: Color = Color(str(radial_bar.get("cool_color", "#38bdf8")))
-	var stressed_color: Color = Color(str(radial_bar.get("stressed_color", "#f59e0b")))
-	var critical_color: Color = Color(str(radial_bar.get("critical_color", "#ef4444")))
+	var cool_color: Color = _muted_color(Color(str(radial_bar.get("cool_color", "#56666F"))))
+	var stressed_color: Color = _muted_color(Color(str(radial_bar.get("stressed_color", "#7A6B59"))))
+	var critical_color: Color = _muted_color(Color(str(radial_bar.get("critical_color", "#935B56"))))
 	var ring_thickness: float = maxf(2.0, float(radial_bar.get("ring_thickness", 4.0)) * camera_zoom)
 	var ring_radius: float = maxf(24.0, float(radial_bar.get("ring_radius", 33.0)) * camera_zoom)
 	var base_opacity: float = clampf(float(radial_bar.get("opacity_min", 0.3)), 0.0, 1.0)
@@ -234,25 +238,30 @@ func _draw_radial_heat_bar(center: Vector2, heat_ratio: float, tower_data: Dicti
 	var start_angle: float = -PI * 0.5
 	var sweep: float = TAU * clampf(heat_ratio, 0.0, 1.0)
 	var glow_width: float = ring_thickness * (1.0 + 0.5 * heat_ratio)
-	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.95, 0.97, 1.0, 0.10), maxf(1.0, ring_thickness * 0.6), true)
+	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.68, 0.70, 0.72, 0.16), maxf(1.0, ring_thickness * 0.6), true)
 	if sweep > 0.001:
 		draw_arc(center, ring_radius, start_angle, start_angle + sweep, 64, bar_color, ring_thickness, true)
 		var glow_color: Color = bar_color
-		glow_color.a *= 0.35 + 0.45 * heat_ratio
-		draw_arc(center, ring_radius + ring_thickness * 0.45, start_angle, start_angle + sweep, 64, glow_color, glow_width, true)
+		glow_color.a *= 0.24 + 0.20 * heat_ratio
+		draw_arc(center, ring_radius + ring_thickness * 0.42, start_angle, start_angle + sweep, 64, glow_color, glow_width * 0.9, true)
+
+func _muted_color(input_color: Color) -> Color:
+	var muted_s: float = minf(input_color.s, MUTED_SAT_LIMIT)
+	var muted_v: float = minf(input_color.v, MUTED_VALUE_LIMIT)
+	return Color.from_hsv(input_color.h, muted_s, muted_v, input_color.a)
 
 func _draw_enemies() -> void:
 	for enemy_data: Dictionary in enemies:
 		var p: Vector2 = _world_to_draw(Vector2(enemy_data.get("pos", Vector2.ZERO)))
-		draw_polygon([p + Vector2(0, -14), p + Vector2(13, 11), p + Vector2(-13, 11)], [Color(1.0, 0.28, 0.22, 1.0)])
+		draw_polygon([p + Vector2(0, -14), p + Vector2(13, 11), p + Vector2(-13, 11)], [Color(0.84, 0.52, 0.46, 1.0)])
 
 func _draw_effects() -> void:
 	for entry: Dictionary in floating_texts:
 		var alpha: float = 1.0 - float(entry.get("t", 0.0)) / 0.75
 		var p: Vector2 = _world_to_draw(Vector2(entry.get("pos", Vector2.ZERO)))
-		draw_string(ThemeDB.fallback_font, p, "-%d" % int(entry.get("amount", 0)), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.35, 0.35, alpha))
+		draw_string(ThemeDB.fallback_font, p, "-%d" % int(entry.get("amount", 0)), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.92, 0.67, 0.62, alpha))
 	for fx: Dictionary in death_vfx:
 		var t: float = float(fx.get("t", 0.0))
 		var radius: float = lerpf(10.0, 42.0, t / 0.45)
 		var alpha_fx: float = 1.0 - t / 0.45
-		draw_circle(_world_to_draw(Vector2(fx.get("pos", Vector2.ZERO))), radius * camera_zoom, Color(0.5, 0.9, 1.0, alpha_fx * 0.4))
+		draw_circle(_world_to_draw(Vector2(fx.get("pos", Vector2.ZERO))), radius * camera_zoom, Color(0.60, 0.67, 0.72, alpha_fx * 0.34))
