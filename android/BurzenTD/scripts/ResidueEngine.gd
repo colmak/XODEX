@@ -69,3 +69,14 @@ static func _sanitize_residue_class(residue_class: StringName) -> StringName:
 	if is_valid_residue_class(residue_class):
 		return residue_class
 	return &"special"
+
+
+static func apply_eigenstate_vector(eigenstate: PackedFloat32Array) -> Dictionary:
+	if eigenstate.size() < 6:
+		return {"residue_class": &"special", "residue_slots": [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT]}
+	var index: int = int(clampf(eigenstate[1], 0.0, 0.999) * float(RESIDUE_CLASSES.size()))
+	var residue_class: StringName = RESIDUE_CLASSES[index]
+	return {
+		"residue_class": residue_class,
+		"residue_slots": [residue_class, residue_class, EMPTY_SLOT, EMPTY_SLOT],
+	}
