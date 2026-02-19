@@ -76,8 +76,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "nonpolar",
@@ -151,8 +150,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "polar_uncharged",
@@ -226,8 +224,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "positively_charged",
@@ -301,8 +298,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "negatively_charged",
@@ -376,8 +372,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "special",
@@ -451,8 +446,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "nonpolar_special",
@@ -526,8 +520,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "polar_uncharged",
@@ -601,8 +594,7 @@
             "link_glow_intensity": 0.35,
             "link_pulse_rate": 1.6
           }
-        },
-        "visibility_enabled": true
+        }
       },
       "synthesis": {
         "synthesis_class": "keystone",
@@ -640,9 +632,6 @@
         "link_glow_intensity": 0.35,
         "link_pulse_rate": 1.6
       }
-    },
-    "tower": {
-      "visibility_enabled": true
     }
   }
 }
