@@ -30,6 +30,8 @@ var arena_camera: ArenaCamera2D
 var level_root: LevelRoot
 var complete_screen: LevelCompleteScreen
 var placement_controller: TowerPlacementController
+var tower_visual_root: Node2D
+var tower_visual_nodes: Dictionary = {}
 
 var towers: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
@@ -68,6 +70,7 @@ var heat_spent: int = 0
 var synthesis_recipe_book: Dictionary = {}
 var pending_synthesis: Dictionary = {}
 var synthesis_partner_index: int = -1
+var next_tower_uid: int = 1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -76,6 +79,10 @@ func _ready() -> void:
 	SingletonGuard.assert_singleton_ready("DamageTracker", "LevelScene._ready")
 	arena_viewport = ARENA_VIEWPORT_SCENE.instantiate() as ArenaViewport
 	add_child(arena_viewport)
+	tower_visual_root = Node2D.new()
+	tower_visual_root.name = "TowerVisualRoot"
+	tower_visual_root.z_index = 20
+	add_child(tower_visual_root)
 	arena_camera = ArenaCamera2D.new()
 	add_child(arena_camera)
 	level_root = LEVEL_ROOT_SCENE.instantiate() as LevelRoot
@@ -187,6 +194,8 @@ func _load_level() -> void:
 	heat_budget_limit = int(config.get("heat_budget_limit", 100))
 	heat_spent = 0
 	towers.clear()
+	_clear_tower_visuals()
+	next_tower_uid = 1
 	enemies.clear()
 	floating_texts.clear()
 	death_vfx.clear()
@@ -297,6 +306,7 @@ func _update_towers(delta: float) -> void:
 		var target: Variant = _tower_target(t)
 		if target is Dictionary:
 			t["last_target"] = target["pos"]
+			_flash_tower_attack(int(t.get("id", -1)), Vector2(target["pos"]))
 			var dealt: float = BASE_DAMAGE * (1.0 + maxf(0.0, float(t.get("heat_tolerance_value", 0.8)) - 0.7))
 			target["hp"] = float(target["hp"]) - dealt
 			DamageTracker.record_damage(str(t.get("tower_id", "unknown")), dealt)
@@ -354,14 +364,17 @@ func _place_tower(pos: Vector2, definition: Dictionary) -> void:
 		return
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	var tower_payload: Dictionary = {
-		"id": towers.size() + 1,
+		"id": next_tower_uid,
 		"pos": pos,
 		"radius": arena_viewport.cell_size * 2.8,
 		"thermal": thermal,
 		"last_target": null,
 	}.merged(definition, true)
 	towers.append(tower_payload)
+	_spawn_tower_visual(tower_payload)
+	next_tower_uid += 1
 	heat_spent += int(definition.get("build_cost", 0))
+	print("[TowerPlacement] placed id=%d tower=%s pos=%s scene=%s" % [int(tower_payload.get("id", -1)), str(tower_payload.get("tower_id", "unknown")), str(tower_payload.get("pos", Vector2.ZERO)), str(tower_payload.get("scene_path", ""))])
 	placement_valid = false
 	TutorialManager.advance_step()
 	level_root.set_status(TutorialManager.current_step_text())
@@ -512,17 +525,20 @@ func _confirm_synthesis(preview: Dictionary) -> void:
 	var removed_cost: int = 0
 	for idx: int in remove_indices:
 		removed_cost += int(towers[idx].get("build_cost", 0))
+		_remove_tower_visual_by_id(int(towers[idx].get("id", -1)))
 		towers.remove_at(idx)
 	var result_tower: Dictionary = Dictionary(preview.get("result_tower", {})).duplicate(true)
 	var thermal: Dictionary = THERMAL_DEFAULT.duplicate(true)
 	var tower_payload: Dictionary = {
-		"id": towers.size() + 1,
+		"id": next_tower_uid,
 		"pos": arena_viewport.snap_to_grid(keep_position),
 		"radius": arena_viewport.cell_size * 2.8,
 		"thermal": thermal,
 		"last_target": null,
 	}.merged(result_tower, true)
 	towers.append(tower_payload)
+	_spawn_tower_visual(tower_payload)
+	next_tower_uid += 1
 	var result_cost: int = int(result_tower.get("build_cost", 0))
 	var delta: int = int(Dictionary(preview.get("recipe", {})).get("heat_credit_delta", 0))
 	heat_spent = maxi(0, heat_spent - removed_cost + result_cost + delta)
@@ -580,6 +596,7 @@ func _upgrade_tower(tower_index: int) -> void:
 func _sell_tower(tower_index: int, sell_value: int) -> void:
 	if tower_index < 0 or tower_index >= towers.size():
 		return
+	_remove_tower_visual_by_id(int(towers[tower_index].get("id", -1)))
 	towers.remove_at(tower_index)
 	heat_spent = maxi(0, heat_spent - sell_value)
 	level_root.set_status("Tower sold: +%d heat credits returned." % sell_value)
@@ -590,6 +607,52 @@ func _refresh_tower_bonds() -> void:
 		graph_input.append(t)
 	var graph_payload: Dictionary = TowerGraph.new().sync_from_towers(graph_input)
 	tower_bonds = graph_payload.get("bonds", [])
+
+
+func _spawn_tower_visual(tower_payload: Dictionary) -> void:
+	if tower_visual_root == null:
+		return
+	var instance: Node2D = null
+	var scene_path: String = str(tower_payload.get("scene_path", ""))
+	if not scene_path.is_empty() and ResourceLoader.exists(scene_path):
+		var packed: PackedScene = load(scene_path) as PackedScene
+		if packed != null:
+			instance = packed.instantiate() as Node2D
+	if instance == null:
+		instance = TowerBase.new()
+	instance.position = Vector2(tower_payload.get("pos", Vector2.ZERO))
+	var visuals: Dictionary = Dictionary(tower_payload.get("visuals", {}))
+	var visibility_enabled: bool = bool(visuals.get("visibility_enabled", true))
+	instance.visible = visibility_enabled
+	instance.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	instance.z_index = 20
+	if instance.has_method("apply_runtime_definition"):
+		instance.call("apply_runtime_definition", tower_payload)
+	tower_visual_root.add_child(instance)
+	tower_visual_nodes[int(tower_payload.get("id", -1))] = instance
+	print("[TowerPlacement] instance visible=%s z=%d node=%s" % [str(instance.visible), int(instance.z_index), instance.name])
+
+func _remove_tower_visual_by_id(tower_id: int) -> void:
+	if not tower_visual_nodes.has(tower_id):
+		return
+	var node: Node = tower_visual_nodes[tower_id]
+	if is_instance_valid(node):
+		node.queue_free()
+	tower_visual_nodes.erase(tower_id)
+
+func _clear_tower_visuals() -> void:
+	for node_ref: Variant in tower_visual_nodes.values():
+		var node: Node = node_ref
+		if is_instance_valid(node):
+			node.queue_free()
+	tower_visual_nodes.clear()
+
+func _flash_tower_attack(tower_id: int, target_pos: Vector2) -> void:
+	if not tower_visual_nodes.has(tower_id):
+		return
+	var node_ref: Variant = tower_visual_nodes[tower_id]
+	if node_ref is Node and is_instance_valid(node_ref) and node_ref.has_method("trigger_attack_indicator"):
+		node_ref.call("trigger_attack_indicator", target_pos)
 
 func _distance_to_path(pos: Vector2) -> float:
 	var closest: float = INF
