@@ -20,6 +20,8 @@ var placement_active: bool = false
 var placement_valid: bool = false
 var placement_heat_delta: int = 0
 var sim_time: float = 0.0
+var draw_delta: float = 0.0
+var _last_sim_time: float = 0.0
 var camera_center: Vector2 = Vector2.ZERO
 var camera_zoom: float = 1.0
 var recommended_spots: PackedVector2Array = PackedVector2Array()
@@ -30,6 +32,7 @@ var heat_gradient_style: String = "Standard"
 var grid_opacity: float = 0.25
 
 var cell_size: float = 64.0
+var _heat_bar_display: Dictionary = {}
 
 @onready var river_ribbon: Line2D = $RiverRibbon
 
@@ -76,6 +79,8 @@ func update_state(next_path: PackedVector2Array, next_towers: Array[Dictionary],
 	placement_active = is_placing
 	placement_valid = is_valid_placement
 	placement_heat_delta = heat_delta
+	draw_delta = maxf(0.0, next_time - _last_sim_time)
+	_last_sim_time = next_time
 	sim_time = next_time
 	queue_redraw()
 
@@ -183,10 +188,17 @@ func _draw_bonds() -> void:
 		draw_line(p_from, p_to, Color(0.45, 1.0, 0.95, 0.25 + intensity * 0.45), 2.0 + 2.0 * intensity)
 
 func _draw_towers() -> void:
+	var active_ids: Dictionary = {}
 	for t: Dictionary in towers:
 		var p: Vector2 = _world_to_draw(Vector2(t.get("pos", Vector2.ZERO)))
 		var thermal: Dictionary = Dictionary(t.get("thermal", {}))
 		var heat_ratio: float = clampf(float(thermal.get("heat", 0.0)) / maxf(float(thermal.get("capacity", 100.0)), 0.001), 0.0, 1.0)
+		var tower_id: int = int(t.get("id", 0))
+		active_ids[tower_id] = true
+		var current_fill: float = float(_heat_bar_display.get(tower_id, heat_ratio))
+		var smoothing_speed: float = maxf(4.0 * draw_delta, 0.06)
+		current_fill = move_toward(current_fill, heat_ratio, smoothing_speed)
+		_heat_bar_display[tower_id] = current_fill
 		var low_color: Color = Color("ffd700")
 		var mid_color: Color = Color("ff8c00")
 		var high_color: Color = Color("ff4500")
@@ -196,9 +208,38 @@ func _draw_towers() -> void:
 		if heat_ratio > 0.5:
 			base = mid_color.lerp(high_color, clampf((heat_ratio - 0.5) * 2.0, 0.0, 1.0))
 		draw_circle(p, 26.0 * camera_zoom, base)
+		_draw_radial_heat_bar(p, current_fill, t)
 		var target: Variant = t.get("last_target", null)
 		if target != null:
 			draw_line(p, _world_to_draw(Vector2(target)), Color(0.3, 0.9, 1.0, 0.65), 3.0)
+	for key: Variant in _heat_bar_display.keys():
+		if not active_ids.has(int(key)):
+			_heat_bar_display.erase(key)
+
+func _draw_radial_heat_bar(center: Vector2, heat_ratio: float, tower_data: Dictionary) -> void:
+	var visuals: Dictionary = Dictionary(tower_data.get("visuals", {}))
+	var thermal_visuals: Dictionary = Dictionary(visuals.get("thermal", {}))
+	var radial_bar: Dictionary = Dictionary(thermal_visuals.get("radial_bar", {}))
+	if not bool(radial_bar.get("enabled", true)):
+		return
+	var cool_color: Color = Color(str(radial_bar.get("cool_color", "#38bdf8")))
+	var stressed_color: Color = Color(str(radial_bar.get("stressed_color", "#f59e0b")))
+	var critical_color: Color = Color(str(radial_bar.get("critical_color", "#ef4444")))
+	var ring_thickness: float = maxf(2.0, float(radial_bar.get("ring_thickness", 4.0)) * camera_zoom)
+	var ring_radius: float = maxf(24.0, float(radial_bar.get("ring_radius", 33.0)) * camera_zoom)
+	var base_opacity: float = clampf(float(radial_bar.get("opacity_min", 0.3)), 0.0, 1.0)
+	var opacity: float = maxf(base_opacity, HeatVisuals.radial_opacity(heat_ratio))
+	var bar_color: Color = HeatVisuals.gradient_color(heat_ratio, cool_color, stressed_color, critical_color)
+	bar_color.a = opacity
+	var start_angle: float = -PI * 0.5
+	var sweep: float = TAU * clampf(heat_ratio, 0.0, 1.0)
+	var glow_width: float = ring_thickness * (1.0 + 0.5 * heat_ratio)
+	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.95, 0.97, 1.0, 0.10), maxf(1.0, ring_thickness * 0.6), true)
+	if sweep > 0.001:
+		draw_arc(center, ring_radius, start_angle, start_angle + sweep, 64, bar_color, ring_thickness, true)
+		var glow_color: Color = bar_color
+		glow_color.a *= 0.35 + 0.45 * heat_ratio
+		draw_arc(center, ring_radius + ring_thickness * 0.45, start_angle, start_angle + sweep, 64, glow_color, glow_width, true)
 
 func _draw_enemies() -> void:
 	for enemy_data: Dictionary in enemies:
