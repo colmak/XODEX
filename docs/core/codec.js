@@ -215,6 +215,68 @@ export function parseHash(hash) {
   return normalized.slice(VERSION.length + 1);
 }
 
+
+const EIGENSTATE_FIELD_COUNT = 6;
+
+function checksum8Sync(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+export function encodeEigenstate(eigenstate) {
+  const fields = [
+    eigenstate.energy_setpoint,
+    eigenstate.epigenetic_profile,
+    eigenstate.cascade_readiness,
+    eigenstate.stress_resilience,
+    eigenstate.differentiation_axis,
+    eigenstate.mechanical_state
+  ];
+  if (fields.some((value) => !Number.isFinite(value))) {
+    throw new Error("Eigenstate fields must be finite numbers.");
+  }
+
+  const bytes = new Uint8Array(EIGENSTATE_FIELD_COUNT * 4);
+  const view = new DataView(bytes.buffer);
+  for (let i = 0; i < fields.length; i += 1) {
+    view.setFloat32(i * 4, fields[i], false);
+  }
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  const payload = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return `${VERSION}.${payload}.${checksum8Sync(payload)}`;
+}
+
+export function decodeEigenstate(token) {
+  const [version, payload, checksum] = token.split(".");
+  if (version !== VERSION) throw new Error("Unsupported or missing level version.");
+  if (checksum8Sync(payload) !== checksum) throw new Error("Checksum mismatch.");
+
+  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((payload.length + 3) % 4);
+  const binary = atob(base64);
+  if (binary.length !== EIGENSTATE_FIELD_COUNT * 4) throw new Error("Malformed Eigenstate payload.");
+
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const view = new DataView(bytes.buffer);
+
+  return {
+    energy_setpoint: view.getFloat32(0, false),
+    epigenetic_profile: view.getFloat32(4, false),
+    cascade_readiness: view.getFloat32(8, false),
+    stress_resilience: view.getFloat32(12, false),
+    differentiation_axis: view.getFloat32(16, false),
+    mechanical_state: view.getFloat32(20, false)
+  };
+}
+
+export const codex_encode_eigenstate = encodeEigenstate;
+export const codex_decode_eigenstate = decodeEigenstate;
+
 export function deterministicSeedFromToken(token) {
   let h = 2166136261;
   for (let i = 0; i < token.length; i += 1) {

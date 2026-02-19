@@ -77,3 +77,16 @@ func _graph_stats() -> Dictionary:
 		"misfold_risk": float(negatives) / float(total),
 		"avg_domain_heat": avg_domain_heat,
 	}
+
+
+func sync_from_eigenstate(eigenstate: PackedFloat32Array) -> Dictionary:
+	var synthetic_towers: Array[Dictionary] = []
+	for i: int in range(3):
+		synthetic_towers.append({
+			"id": i,
+			"grid_x": i,
+			"grid_y": 0,
+			"pos": Vector2(i * 64, 0),
+			"normalized_heat": clampf(eigenstate[0] + float(i) * 0.05, 0.0, 1.0),
+		})
+	return sync_from_towers(synthetic_towers)
