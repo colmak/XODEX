@@ -210,6 +210,8 @@ func _draw_towers() -> void:
 		if heat_ratio > 0.5:
 			base = mid_color.lerp(high_color, clampf((heat_ratio - 0.5) * 2.0, 0.0, 1.0))
 		draw_circle(p, 26.0 * camera_zoom, base)
+		draw_circle(p, 29.0 * camera_zoom, Color(0.78, 0.80, 0.78, 0.28))
+		draw_arc(p, 29.0 * camera_zoom, 0.0, TAU, 36, Color(0.86, 0.88, 0.86, 0.32), 2.0, true)
 		_draw_radial_heat_bar(p, current_fill, t)
 		var target: Variant = t.get("last_target", null)
 		if target != null:

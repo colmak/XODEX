@@ -111,7 +111,7 @@ func _create_card(entry: Dictionary, global_heat_ratio: float, selectable_now: b
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.add_theme_font_size_override("font_size", 16)
-	title.modulate = Color("e0e0e0")
+	title.modulate = Color("f2f2f2")
 	vbox.add_child(title)
 	card.self_modulate = MUTE_CARD_COLOR
 	var role: Label = Label.new()
