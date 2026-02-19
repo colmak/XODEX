@@ -113,6 +113,7 @@ BURZEN TD uses incremental pre-1.0 semantics:
 - **Python simulation tests:** `simulation/`
 - **Prototype formal experiments (Haskell):** `simulation/haskell/`
 - **Product/engineering docs:** `docs/`
+- **Formal tower-architecture note:** `docs/nesorox_burzen_tower_structures.md`
 - **GitHub Pages web module:** `docs/index.html`, `docs/editor/`, `docs/play/`, `docs/core/`
 
 Design principle: keep rendering/input logic in Godot while preserving deterministic mechanics models in simulation layers for rapid verification.
