@@ -102,6 +102,29 @@ func educational_tooltip(tower: Dictionary) -> String:
 		return "Thermal agitation rising: bond affinity decays and misfold risk increases."
 	return "Critical heat threshold reached: denaturation-like behavior expected."
 
+func thermal_visual_state(tower: Dictionary) -> StringName:
+	# Simulation-layer hook: any mirror implementation should call the same state gate.
+	var normalized_heat: float = float(tower.get("normalized_heat", tower.get("thermal_state", 0.0)))
+	var is_overheated: bool = bool(tower.get("is_misfolded", false))
+	return HeatVisuals.classify_state(normalized_heat, is_overheated)
+
+func thermal_visual_snapshot(tower: Dictionary) -> Dictionary:
+	# Simulation-layer hook: this payload can be mirrored in Python/Haskell for replay parity.
+	var visuals: Dictionary = Dictionary(tower.get("visuals", {}))
+	var thermal_visuals: Dictionary = Dictionary(visuals.get("thermal", {}))
+	var radial_bar: Dictionary = Dictionary(thermal_visuals.get("radial_bar", {}))
+	var normalized_heat: float = float(tower.get("normalized_heat", tower.get("thermal_state", 0.0)))
+	var cool_color: Color = Color(str(radial_bar.get("cool_color", "#38bdf8")))
+	var stressed_color: Color = Color(str(radial_bar.get("stressed_color", "#f59e0b")))
+	var critical_color: Color = Color(str(radial_bar.get("critical_color", "#ef4444")))
+	var min_opacity: float = clampf(float(radial_bar.get("opacity_min", 0.3)), 0.0, 1.0)
+	return {
+		"state": thermal_visual_state(tower),
+		"normalized_heat": clampf(normalized_heat, 0.0, 2.0),
+		"radial_opacity": maxf(min_opacity, HeatVisuals.radial_opacity(normalized_heat)),
+		"radial_color": HeatVisuals.gradient_color(normalized_heat, cool_color, stressed_color, critical_color),
+	}
+
 func _threshold_for_residue(residue_class: String) -> float:
 	var thresholds: Dictionary = config.get("overheat_threshold", {})
 	return float(thresholds.get(residue_class, thresholds.get("special", 62.0)))

@@ -49,7 +49,35 @@
       "visuals": {
         "primary_color": "#e879f9",
         "shape": "circle",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "nonpolar",
@@ -96,7 +124,35 @@
       "visuals": {
         "primary_color": "#38bdf8",
         "shape": "rounded_square",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "polar_uncharged",
@@ -143,7 +199,35 @@
       "visuals": {
         "primary_color": "#f97316",
         "shape": "triangle_up",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "positively_charged",
@@ -190,7 +274,35 @@
       "visuals": {
         "primary_color": "#22d3ee",
         "shape": "triangle_down",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "negatively_charged",
@@ -237,7 +349,35 @@
       "visuals": {
         "primary_color": "#facc15",
         "shape": "diamond",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "special",
@@ -284,7 +424,35 @@
       "visuals": {
         "primary_color": "#ef4444",
         "shape": "oval",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "nonpolar_special",
@@ -331,7 +499,35 @@
       "visuals": {
         "primary_color": "#a3e635",
         "shape": "rectangle",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "polar_uncharged",
@@ -378,7 +574,35 @@
       "visuals": {
         "primary_color": "#818cf8",
         "shape": "pentagon",
-        "icon_path": ""
+        "icon_path": "",
+        "thermal": {
+          "radial_bar": {
+            "enabled": true,
+            "ring_radius": 33.0,
+            "ring_thickness": 4.0,
+            "opacity_min": 0.3,
+            "cool_color": "#38bdf8",
+            "stressed_color": "#f59e0b",
+            "critical_color": "#ef4444",
+            "glow_intensity": 1.0,
+            "fill_smoothing": 4.0
+          },
+          "state_feedback": {
+            "normal_pulse_rate": 0.0,
+            "stressed_pulse_rate": 1.3,
+            "overheated_pulse_rate": 2.2,
+            "recovering_pulse_rate": 1.1
+          },
+          "residue": {
+            "zone_lifetime_seconds": 2.0,
+            "zone_glow_intensity": 0.55
+          },
+          "conduction": {
+            "link_glow_intensity": 0.35,
+            "link_pulse_rate": 1.6
+          }
+        },
+        "visibility_enabled": true
       },
       "synthesis": {
         "synthesis_class": "keystone",
@@ -388,5 +612,37 @@
         ]
       }
     }
-  ]
+  ],
+  "visuals_defaults": {
+    "thermal": {
+      "radial_bar": {
+        "enabled": true,
+        "ring_radius": 33.0,
+        "ring_thickness": 4.0,
+        "opacity_min": 0.3,
+        "cool_color": "#38bdf8",
+        "stressed_color": "#f59e0b",
+        "critical_color": "#ef4444",
+        "glow_intensity": 1.0,
+        "fill_smoothing": 4.0
+      },
+      "state_feedback": {
+        "normal_pulse_rate": 0.0,
+        "stressed_pulse_rate": 1.3,
+        "overheated_pulse_rate": 2.2,
+        "recovering_pulse_rate": 1.1
+      },
+      "residue": {
+        "zone_lifetime_seconds": 2.0,
+        "zone_glow_intensity": 0.55
+      },
+      "conduction": {
+        "link_glow_intensity": 0.35,
+        "link_pulse_rate": 1.6
+      }
+    },
+    "tower": {
+      "visibility_enabled": true
+    }
+  }
 }
