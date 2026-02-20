@@ -1,7 +1,5 @@
 extends Node
 
-class_name CodexReplayService
-
 var _pending_frames: Array[String] = []
 var _campaign_root: Node = null
 
