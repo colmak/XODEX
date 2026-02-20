@@ -1,0 +1,22 @@
+{
+  "level_id": "level_01",
+  "schema": "campaign_level_geometry_v0_8",
+  "map_topology": {
+    "path_nodes": [
+      {
+        "x": 64,
+        "y": 64
+      },
+      {
+        "x": 640,
+        "y": 360
+      }
+    ]
+  },
+  "render_constraints": {
+    "max_towers": 24,
+    "max_mobs": 80,
+    "heat_overlay_resolution": 128,
+    "max_energy_edges": 120
+  }
+}
