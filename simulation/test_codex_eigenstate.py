@@ -1,4 +1,4 @@
-from codex_eigenstate import Eigenstate, decode_eigenstate, encode_eigenstate
+from codex_eigenstate import Eigenstate, decode_eigenstate, decode_payload, encode_eigenstate, encode_payload
 
 
 def test_codex_eigenstate_round_trip():
@@ -6,7 +6,7 @@ def test_codex_eigenstate_round_trip():
     token = encode_eigenstate(eigen)
     decoded = decode_eigenstate(token)
     for left, right in zip(eigen.as_tuple(), decoded.as_tuple()):
-        assert abs(left - right) < 1e-6
+        assert abs(left - right) < 1e-9
 
 
 def test_codex_eigenstate_checksum_validation():
@@ -19,3 +19,10 @@ def test_codex_eigenstate_checksum_validation():
         assert "Checksum mismatch" in str(exc)
     else:
         raise AssertionError("Expected checksum mismatch")
+
+
+def test_payload_checksum_uses_canonical_json_bytes():
+    payload = {"schema": "x", "b": 2, "a": 1}
+    token = encode_payload(payload)
+    decoded = decode_payload(token)
+    assert decoded == {"a": 1, "b": 2, "schema": "x"}

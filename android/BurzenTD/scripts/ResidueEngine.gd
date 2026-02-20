@@ -76,7 +76,11 @@ static func apply_eigenstate_vector(eigenstate: PackedFloat32Array) -> Dictionar
 		return {"residue_class": &"special", "residue_slots": [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT]}
 	var index: int = int(clampf(eigenstate[1], 0.0, 0.999) * float(RESIDUE_CLASSES.size()))
 	var residue_class: StringName = RESIDUE_CLASSES[index]
+	var energy_hint: float = clampf(eigenstate[0], 0.0, 1.0)
+	var heat_hint: float = clampf(1.0 - eigenstate[3], 0.0, 1.0)
 	return {
 		"residue_class": residue_class,
 		"residue_slots": [residue_class, residue_class, EMPTY_SLOT, EMPTY_SLOT],
+		"energy_hint": energy_hint,
+		"heat_hint": heat_hint,
 	}
