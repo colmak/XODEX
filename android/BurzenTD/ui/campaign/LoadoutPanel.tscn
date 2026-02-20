@@ -27,6 +27,12 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
+
+[node name="ReplayButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Replay XDX1"
+
 [node name="LockButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2

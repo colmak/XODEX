@@ -1,4 +1,12 @@
-from codex_eigenstate import Eigenstate, decode_eigenstate, decode_payload, encode_eigenstate, encode_payload
+from codex_eigenstate import (
+    Eigenstate,
+    RejectionType,
+    decode_eigenstate,
+    decode_payload,
+    decode_payload_with_rejection,
+    encode_eigenstate,
+    encode_payload,
+)
 
 
 def test_codex_eigenstate_round_trip():
@@ -26,3 +34,21 @@ def test_payload_checksum_uses_canonical_json_bytes():
     token = encode_payload(payload)
     decoded = decode_payload(token)
     assert decoded == {"a": 1, "b": 2, "schema": "x"}
+
+
+def test_rejections():
+    invalid = decode_payload_with_rejection("BAD")
+    assert invalid["valid"] is False
+    assert invalid["rejection"] == RejectionType.SCHEMA.value
+
+    payload = {"schema": "x", "version_id": 3}
+    token = encode_payload(payload)
+    checksum_bad = token[:-1] + ("0" if token[-1] != "0" else "1")
+    reject_checksum = decode_payload_with_rejection(checksum_bad)
+    assert reject_checksum["rejection"] == RejectionType.CHECKSUM_MISMATCH.value
+
+    accepted = decode_payload_with_rejection(token, last_version_id=1)
+    assert accepted["valid"] is True
+
+    reject_order = decode_payload_with_rejection(token, last_version_id=3)
+    assert reject_order["rejection"] == RejectionType.ORDER_VIOLATION.value
