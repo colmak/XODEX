@@ -1,67 +1,79 @@
 extends Control
 
-class_name CampaignLoadoutPanel
+class_name LoadoutPanel
 
-signal loadout_locked(selected_tower_ids: Array[String])
+signal loadout_locked(selected_ids: Array[String])
 
-const SLOT_LIMIT: int = 4
-const CORE_TOWERS: Array[String] = [
-	"kinetic",
-	"thermal",
-	"energy",
-	"reaction",
-	"pulse",
-	"field",
-	"conversion",
-	"control",
-]
+const MAX_SELECTION: int = 4
 
-var selected: Array[String] = []
-var level_started: bool = false
-
-@onready var tower_list: ItemList = %CoreTowerList
 @onready var selection_label: Label = %SelectionLabel
-@onready var lock_button: Button = %LockSelectionButton
+@onready var lock_button: Button = %LockButton
+@onready var list_container: VBoxContainer = %TowerList
+
+var _selected_ids: Array[String] = []
+var _locked: bool = false
 
 func _ready() -> void:
-	for tower_id: String in CORE_TOWERS:
-		tower_list.add_item(tower_id.capitalize())
-	tower_list.multi_selected.connect(_on_multi_selected)
-	lock_button.pressed.connect(_on_lock_pressed)
-	_update_ui()
+	lock_button.pressed.connect(_lock_selection)
+	_update_header()
 
-func set_level_started(started: bool) -> void:
-	level_started = started
-	tower_list.select_mode = ItemList.SELECT_SINGLE if started else ItemList.SELECT_MULTI
-	lock_button.disabled = started
+func configure_towers(tower_defs: Array[Dictionary]) -> void:
+	for child: Node in list_container.get_children():
+		child.queue_free()
+	for tower_def: Dictionary in tower_defs:
+		var button: CheckButton = CheckButton.new()
+		button.text = "%s (%s)" % [str(tower_def.get("name", "Tower")), str(tower_def.get("id", "unknown"))]
+		button.disabled = _locked
+		button.toggled.connect(func(pressed: bool) -> void:
+			_on_tower_toggled(str(tower_def.get("id", "")), pressed)
+		)
+		list_container.add_child(button)
+	_update_header()
 
-func get_selected_loadout() -> Array[String]:
-	return selected.duplicate()
+func get_selected_ids() -> Array[String]:
+	return _selected_ids.duplicate()
 
-func _on_multi_selected(index: int, selected_state: bool) -> void:
-	if level_started:
-		tower_list.deselect(index)
+func set_read_only(read_only: bool) -> void:
+	_locked = read_only
+	for child: Node in list_container.get_children():
+		if child is BaseButton:
+			(child as BaseButton).disabled = read_only
+	lock_button.disabled = read_only
+	_update_header()
+
+func _on_tower_toggled(tower_id: String, pressed: bool) -> void:
+	if _locked or tower_id.is_empty():
 		return
-	var tower_id: String = CORE_TOWERS[index]
-	if selected_state:
-		if selected.has(tower_id):
+	if pressed:
+		if _selected_ids.has(tower_id):
 			return
-		if selected.size() >= SLOT_LIMIT:
-			tower_list.deselect(index)
+		if _selected_ids.size() >= MAX_SELECTION:
+			_revert_toggle(tower_id, false)
 			return
-		selected.append(tower_id)
+		_selected_ids.append(tower_id)
 	else:
-		selected.erase(tower_id)
-	_update_ui()
+		_selected_ids.erase(tower_id)
+	_update_header()
 
-func _on_lock_pressed() -> void:
-	if selected.size() != SLOT_LIMIT:
+func _revert_toggle(tower_id: String, expected_state: bool) -> void:
+	for child: Node in list_container.get_children():
+		if child is CheckButton:
+			var toggle: CheckButton = child as CheckButton
+			if toggle.text.ends_with("(%s)" % tower_id):
+				toggle.button_pressed = expected_state
+				break
+
+func _lock_selection() -> void:
+	if _selected_ids.size() != MAX_SELECTION:
 		return
-	set_level_started(true)
-	emit_signal("loadout_locked", get_selected_loadout())
-	_update_ui()
+	set_read_only(true)
+	emit_signal("loadout_locked", _selected_ids.duplicate())
 
-func _update_ui() -> void:
-	selection_label.text = "Loadout %d/%d" % [selected.size(), SLOT_LIMIT]
-	lock_button.text = "Locked" if level_started else "Lock 4-Slot Loadout"
-	lock_button.disabled = level_started or selected.size() != SLOT_LIMIT
+func _update_header() -> void:
+	selection_label.text = "Loadout %d/%d" % [_selected_ids.size(), MAX_SELECTION]
+	if _locked:
+		lock_button.text = "Locked"
+	elif _selected_ids.size() == MAX_SELECTION:
+		lock_button.text = "Start Level"
+	else:
+		lock_button.text = "Pick %d More" % (MAX_SELECTION - _selected_ids.size())
