@@ -4,6 +4,7 @@ extends Control
 
 signal tower_card_pressed(selection: Dictionary)
 signal tower_card_long_pressed(selection: Dictionary)
+signal loadout_changed(loadout: Array[String])
 
 const LONG_PRESS_SECONDS: float = 0.45
 const CARD_MIN_SIZE: Vector2 = Vector2(140.0, 200.0)
@@ -25,6 +26,8 @@ var last_global_heat_ratio: float = 0.0
 var last_unlocked_towers: Array[String] = []
 var expand_available: bool = true
 var expand_preview: bool = true
+var selected_loadout: Array[String] = []
+const LOADOUT_LIMIT: int = 4
 
 @onready var collapse_button: Button = get_node_or_null("%CollapseButton") as Button
 @onready var content: VBoxContainer = get_node_or_null("%Content") as VBoxContainer
@@ -192,14 +195,26 @@ func _handle_card_input(event: InputEvent, tower_id: String, entry: Dictionary, 
 			long_press_fired = false
 		else:
 			if active_press_id == tower_id and not long_press_fired:
+				_toggle_loadout_slot(tower_id)
 				module.select_tower(tower_id)
 				emit_signal("tower_card_pressed", entry.duplicate(true))
 			active_press_id = ""
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event
 		if mb.pressed:
+			_toggle_loadout_slot(tower_id)
 			module.select_tower(tower_id)
 			emit_signal("tower_card_pressed", entry.duplicate(true))
+
+func _toggle_loadout_slot(tower_id: String) -> void:
+	if selected_loadout.has(tower_id):
+		selected_loadout.erase(tower_id)
+		emit_signal("loadout_changed", selected_loadout.duplicate())
+		return
+	if selected_loadout.size() >= LOADOUT_LIMIT:
+		return
+	selected_loadout.append(tower_id)
+	emit_signal("loadout_changed", selected_loadout.duplicate())
 
 func _process(delta: float) -> void:
 	if active_press_id.is_empty():

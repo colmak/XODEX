@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import struct
+import json
 from dataclasses import dataclass
 
 VERSION = "XDX1"
-EIGENSTATE_STRUCT = struct.Struct("!6f")
 
 
 @dataclass(frozen=True)
@@ -28,25 +27,64 @@ class Eigenstate:
             self.mechanical_state,
         )
 
+    def to_payload_dict(self) -> dict[str, object]:
+        return {
+            "schema": "eigenstate_v1",
+            "energy_setpoint": self.energy_setpoint,
+            "epigenetic_profile": self.epigenetic_profile,
+            "cascade_readiness": self.cascade_readiness,
+            "stress_resilience": self.stress_resilience,
+            "differentiation_axis": self.differentiation_axis,
+            "mechanical_state": self.mechanical_state,
+        }
 
-def _checksum8(payload: str) -> str:
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:8]
+
+def _canonical_json_bytes(payload: dict[str, object]) -> bytes:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _checksum8(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()[:8]
+
+
+def _to_b64url(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _from_b64url(payload: str) -> bytes:
+    padded = payload + "=" * ((4 - len(payload) % 4) % 4)
+    return base64.urlsafe_b64decode(padded)
 
 
 def encode_eigenstate(eigenstate: Eigenstate) -> str:
-    raw = EIGENSTATE_STRUCT.pack(*eigenstate.as_tuple())
-    payload = base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
-    return f"{VERSION}.{payload}.{_checksum8(payload)}"
+    raw = _canonical_json_bytes(eigenstate.to_payload_dict())
+    return f"{VERSION}.{_to_b64url(raw)}.{_checksum8(raw)}"
 
 
-def decode_eigenstate(token: str) -> Eigenstate:
+def encode_payload(payload: dict[str, object]) -> str:
+    raw = _canonical_json_bytes(payload)
+    return f"{VERSION}.{_to_b64url(raw)}.{_checksum8(raw)}"
+
+
+def decode_payload(token: str) -> dict[str, object]:
     version, payload, checksum = token.split(".")
     if version != VERSION:
         raise ValueError(f"Unsupported token version: {version}")
-    if _checksum8(payload) != checksum:
+    raw = _from_b64url(payload)
+    if _checksum8(raw) != checksum:
         raise ValueError("Checksum mismatch")
+    return json.loads(raw.decode("utf-8"))
 
-    padded = payload + "=" * ((4 - len(payload) % 4) % 4)
-    raw = base64.urlsafe_b64decode(padded)
-    values = EIGENSTATE_STRUCT.unpack(raw)
-    return Eigenstate(*values)
+
+def decode_eigenstate(token: str) -> Eigenstate:
+    payload = decode_payload(token)
+    if payload.get("schema") not in {"eigenstate_v1", "eigenstate_delta_v1"}:
+        raise ValueError("Unsupported eigenstate schema")
+    return Eigenstate(
+        float(payload["energy_setpoint"]),
+        float(payload["epigenetic_profile"]),
+        float(payload["cascade_readiness"]),
+        float(payload["stress_resilience"]),
+        float(payload["differentiation_axis"]),
+        float(payload["mechanical_state"]),
+    )

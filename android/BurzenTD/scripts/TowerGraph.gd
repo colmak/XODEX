@@ -81,12 +81,15 @@ func _graph_stats() -> Dictionary:
 
 func sync_from_eigenstate(eigenstate: PackedFloat32Array) -> Dictionary:
 	var synthetic_towers: Array[Dictionary] = []
-	for i: int in range(3):
+	var energy_anchor: float = 0.0 if eigenstate.is_empty() else clampf(eigenstate[0], 0.0, 1.0)
+	var heat_anchor: float = 0.0 if eigenstate.size() < 2 else clampf(eigenstate[1], 0.0, 1.0)
+	for i: int in range(4):
 		synthetic_towers.append({
 			"id": i,
-			"grid_x": i,
-			"grid_y": 0,
-			"pos": Vector2(i * 64, 0),
-			"normalized_heat": clampf(eigenstate[0] + float(i) * 0.05, 0.0, 1.0),
+			"grid_x": i % 2,
+			"grid_y": i / 2,
+			"pos": Vector2((i % 2) * 64, (i / 2) * 64),
+			"energy_norm": clampf(energy_anchor + float(i) * 0.03, 0.0, 1.0),
+			"normalized_heat": clampf(heat_anchor + float(i) * 0.04, 0.0, 1.0),
 		})
 	return sync_from_towers(synthetic_towers)

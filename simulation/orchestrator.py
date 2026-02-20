@@ -1,39 +1,131 @@
 from __future__ import annotations
 
-from multiprocessing import Pool
-from typing import Iterable
+from dataclasses import dataclass
 
-from codex_eigenstate import Eigenstate, decode_eigenstate, encode_eigenstate
+from codex_eigenstate import decode_payload, encode_payload
+from burzen_td import (
+    FOUR_SLOT_LOADOUT,
+    BurzenTDState,
+    CampaignProgress,
+    CustomSettings,
+    InfiniteMode,
+    SimulationConfig,
+    TowerArchetype,
+    TowerState,
+    advance_campaign,
+    burzen_step,
+    build_campaign_levels,
+    validate_loadout,
+)
+
+
+@dataclass
+class LevelRuntime:
+    progress: CampaignProgress
+    level_tick: int = 0
 
 
 class WasmutableOrchestrator:
-    """Mutable orchestration shell that only moves CODEX Eigenstate payloads."""
+    """Deterministic payload-only orchestrator for BURZEN TD v1.0."""
 
-    @staticmethod
-    def _scale_payload(args: tuple[str, float, float]) -> str:
-        payload, stress_factor, differentiation_shift = args
-        eigen = decode_eigenstate(payload)
-        next_eigen = Eigenstate(
-            energy_setpoint=eigen.energy_setpoint,
-            epigenetic_profile=eigen.epigenetic_profile,
-            cascade_readiness=eigen.cascade_readiness,
-            stress_resilience=max(0.0, eigen.stress_resilience * stress_factor),
-            differentiation_axis=eigen.differentiation_axis + differentiation_shift,
-            mechanical_state=eigen.mechanical_state,
+    def __init__(self) -> None:
+        self.levels = build_campaign_levels()
+        self.runtime = LevelRuntime(progress=CampaignProgress())
+
+    def _decode_action(self, action_payload: str) -> dict[str, object]:
+        payload = decode_payload(action_payload)
+        if payload.get("schema") != "burzen_action_v1":
+            raise ValueError("Unsupported action schema")
+        return payload
+
+    def start_level(self, action_payload: str) -> str:
+        action = self._decode_action(action_payload)
+        loadout = tuple(TowerArchetype(item) for item in action.get("loadout", []))
+        validate_loadout(loadout)
+
+        level_index = int(action.get("level", self.runtime.progress.current_level))
+        level_cfg = self.levels[level_index - 1]
+        unlocked = set(level_cfg["unlocked"])
+        if not set(loadout).issubset(unlocked):
+            raise ValueError("Loadout contains locked towers for level")
+
+        self.runtime.level_tick = 0
+        return encode_payload(
+            {
+                "schema": "burzen_level_started_v1",
+                "level": level_index,
+                "tick": self.runtime.level_tick,
+                "slot_limit": FOUR_SLOT_LOADOUT,
+                "loadout": [t.value for t in loadout],
+                "required_generation": level_cfg["required_generation"],
+                "safe_heat_q95": level_cfg["safe_heat_q95"],
+            }
         )
-        return encode_eigenstate(next_eigen)
 
-    def run_differentiation_sweep(self, codex_payloads: Iterable[str], shifts: Iterable[float]) -> list[str]:
-        jobs = [(payload, 1.0, shift) for payload in codex_payloads for shift in shifts]
-        with Pool() as pool:
-            return pool.map(self._scale_payload, jobs)
+    def run_level_tick(self, action_payload: str) -> str:
+        action = self._decode_action(action_payload)
+        loadout = tuple(TowerArchetype(item) for item in action["loadout"])
+        validate_loadout(loadout)
 
-    def run_stress_protocol(self, codex_payloads: Iterable[str], stress_factor: float) -> list[str]:
-        jobs = [(payload, stress_factor, 0.0) for payload in codex_payloads]
-        with Pool() as pool:
-            return pool.map(self._scale_payload, jobs)
+        config = SimulationConfig()
+        if "custom" in action:
+            custom = action["custom"]
+            settings = CustomSettings(
+                allowed_towers=tuple(TowerArchetype(item) for item in custom.get("allowed_towers", [t.value for t in TowerArchetype])),
+                map_energy_scalar=float(custom.get("map_energy_scalar", 1.0)),
+                map_heat_scalar=float(custom.get("map_heat_scalar", 1.0)),
+                override_alpha=custom.get("alpha"),
+                override_beta=custom.get("beta"),
+            )
+            if settings.override_alpha is not None:
+                config.alpha = float(settings.override_alpha)
+            if settings.override_beta is not None:
+                config.beta = float(settings.override_beta)
 
-    def run_colony(self, codex_payloads: Iterable[str], stress_factor: float, shift: float) -> list[str]:
-        jobs = [(payload, stress_factor, shift) for payload in codex_payloads]
-        with Pool() as pool:
-            return pool.map(self._scale_payload, jobs)
+        towers = [TowerState(archetype=t) for t in loadout]
+        state = BurzenTDState(towers=towers, tick=int(action.get("tick", 0)))
+        n = len(towers)
+        couplings = [[0.0 if i == j else 0.08 for j in range(n)] for i in range(n)]
+        heat_diff = [[0.0 if i == j else 0.05 for j in range(n)] for i in range(n)]
+        delta = burzen_step(state, couplings, heat_diff, config=config)
+
+        self.runtime.level_tick = state.tick
+        return encode_payload(
+            {
+                "schema": "eigenstate_delta_v1",
+                "tick": delta.tick,
+                "energy": {
+                    "lambda2": delta.energy_lambda2,
+                    "lambda3": delta.energy_lambda3,
+                    "fiedler_sign_balance": delta.fiedler_sign_balance,
+                },
+                "heat": {
+                    "mean": delta.heat_mean,
+                    "std": delta.heat_std,
+                    "q95": delta.heat_q95,
+                    "instability_count": delta.instability_count,
+                },
+            }
+        )
+
+    def complete_level(self, won: bool) -> str:
+        self.runtime.progress = advance_campaign(self.runtime.progress, won)
+        return encode_payload(
+            {
+                "schema": "campaign_progress_v1",
+                "current_level": self.runtime.progress.current_level,
+                "completed_levels": list(self.runtime.progress.completed_levels),
+            }
+        )
+
+    def next_infinite_wave(self, seed: int, wave_index: int, entropy: float = 0.2) -> str:
+        mode = InfiniteMode(seed=seed, wave_index=wave_index, entropy=entropy)
+        strength = mode.next_wave_strength()
+        return encode_payload(
+            {
+                "schema": "infinite_wave_v1",
+                "seed": seed,
+                "wave_index": wave_index,
+                "difficulty": strength,
+            }
+        )
