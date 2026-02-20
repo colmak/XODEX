@@ -27,6 +27,7 @@ const DEFAULT_RESIDUE_BY_TOWER: Dictionary = {
 
 static var _last_eigenstate: Dictionary = {}
 static var _last_version_id: int = -1
+var previous_eigenstate: Dictionary = {}
 
 static func normalize_tower_definition(definition: Dictionary) -> Dictionary:
 	var normalized: Dictionary = definition.duplicate(true)
@@ -73,7 +74,7 @@ static func _sanitize_residue_class(residue_class: StringName) -> StringName:
 		return residue_class
 	return &"special"
 
-func apply_eigenstate_vector(eigen: Dictionary, membrane_nodes: Dictionary = {}) -> Dictionary:
+func apply_eigenstate_to_membrane(eigen: Dictionary, membrane_nodes: Dictionary = {}) -> Dictionary:
 	var delta: Dictionary = _compute_diff(previous_eigenstate, eigen)
 	_update_towers(eigen.get("towers", []), membrane_nodes.get("tower_container", null))
 	_update_mobs(eigen.get("mobs", []), membrane_nodes.get("mob_container", null))
