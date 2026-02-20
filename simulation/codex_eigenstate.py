@@ -4,8 +4,16 @@ import base64
 import hashlib
 import json
 from dataclasses import dataclass
+from enum import Enum
 
 VERSION = "XDX1"
+
+
+class RejectionType(Enum):
+    CHECKSUM_MISMATCH = "CHECKSUM"
+    ORDER_VIOLATION = "ORDER"
+    SCHEMA = "SCHEMA"
+    VERSION = "VERSION"
 
 
 @dataclass(frozen=True)
@@ -88,3 +96,20 @@ def decode_eigenstate(token: str) -> Eigenstate:
         float(payload["differentiation_axis"]),
         float(payload["mechanical_state"]),
     )
+
+
+def decode_payload_with_rejection(token: str, *, last_version_id: int = -1) -> dict[str, object]:
+    try:
+        version, payload, checksum = token.split(".")
+    except ValueError:
+        return {"valid": False, "rejection": RejectionType.SCHEMA.value, "reason": "malformed"}
+    if version != VERSION:
+        return {"valid": False, "rejection": RejectionType.VERSION.value, "reason": "unsupported_version"}
+    raw = _from_b64url(payload)
+    if _checksum8(raw) != checksum:
+        return {"valid": False, "rejection": RejectionType.CHECKSUM_MISMATCH.value, "reason": "checksum_mismatch"}
+    parsed = json.loads(raw.decode("utf-8"))
+    version_id = int(parsed.get("version_id", -1)) if isinstance(parsed, dict) else -1
+    if version_id <= last_version_id:
+        return {"valid": False, "rejection": RejectionType.ORDER_VIOLATION.value, "reason": "order_violation", "version_id": version_id}
+    return {"valid": True, "payload": parsed, "version_id": version_id}

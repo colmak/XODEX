@@ -157,18 +157,39 @@ func _update_wave_ui(level_state: Dictionary, wave_ui: Node, progress_bar: Node)
 		var level_number: int = int(level_state.get("level", 1))
 		(progress_bar as ProgressBar).value = clampi(level_number, 1, 10)
 
+static func _telemetry_enabled() -> bool:
+	return OS.is_debug_build() or bool(ProjectSettings.get_setting("debug/enable_membrane_telemetry", false))
+
+static func _snippet_from_payload(payload: Variant) -> String:
+	if payload is String:
+		return payload as String
+	if payload is Dictionary:
+		return JSON.stringify(payload)
+	return str(payload)
+
+static func _log_rejected_frame(snippet: String, reason: String, v_id: int) -> void:
+	var clipped: String = "%s%s" % [snippet.left(64), snippet.right(32)]
+	var log_str: String = "[REJECT] vID:%016X reason:%s snippet:%s" % [v_id, reason, clipped]
+	push_warning(log_str)
+
 static func apply_eigenstate_vector(eigenstate: Variant) -> Dictionary:
 	if eigenstate is PackedFloat32Array:
 		return _apply_legacy_eigenstate_vector(eigenstate)
 	if not (eigenstate is Dictionary):
+		if _telemetry_enabled():
+			_log_rejected_frame(_snippet_from_payload(eigenstate), "invalid_payload", -1)
 		return {"accepted": false, "reason": "invalid_payload"}
 
 	var next_state: Dictionary = (eigenstate as Dictionary).duplicate(true)
 	var version_id: int = int(next_state.get("version_id", -1))
 	if version_id <= _last_version_id:
+		if _telemetry_enabled():
+			_log_rejected_frame(_snippet_from_payload(next_state), "out_of_order", version_id)
 		return {"accepted": false, "reason": "out_of_order", "version_id": version_id, "last_version_id": _last_version_id}
 
 	if bool(next_state.get("checksum_valid", true)) == false:
+		if _telemetry_enabled():
+			_log_rejected_frame(_snippet_from_payload(next_state), "checksum_failed", version_id)
 		return {"accepted": false, "reason": "checksum_failed", "version_id": version_id, "request_resend": true}
 
 	var diff: Dictionary = _build_diff(_last_eigenstate, next_state)

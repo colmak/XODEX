@@ -8,6 +8,7 @@ const MAX_SELECTION: int = 4
 
 @onready var selection_label: Label = %SelectionLabel
 @onready var lock_button: Button = %LockButton
+@onready var replay_button: Button = %ReplayButton
 @onready var list_container: VBoxContainer = %TowerList
 
 var _selected_ids: Array[String] = []
@@ -15,6 +16,7 @@ var _locked: bool = false
 
 func _ready() -> void:
 	lock_button.pressed.connect(_lock_selection)
+	replay_button.pressed.connect(_open_replay_prompt)
 	_update_header()
 
 func configure_towers(tower_defs: Array[Dictionary]) -> void:
@@ -77,3 +79,18 @@ func _update_header() -> void:
 		lock_button.text = "Start Level"
 	else:
 		lock_button.text = "Pick %d More" % (MAX_SELECTION - _selected_ids.size())
+
+func _open_replay_prompt() -> void:
+	var dialog: AcceptDialog = AcceptDialog.new()
+	dialog.title = "CODEX Replay"
+	dialog.dialog_text = "Paste XDX1 URL or fragment:"
+	var line: LineEdit = LineEdit.new()
+	line.placeholder_text = "#XDX1.<payload>.<checksum8>"
+	dialog.add_child(line)
+	add_child(dialog)
+	dialog.confirmed.connect(func() -> void:
+		if has_node("/root/CodexReplayService"):
+			get_node("/root/CodexReplayService").call("replay_from_xdx1", line.text)
+		dialog.queue_free()
+	)
+	dialog.popup_centered(Vector2i(540, 180))
