@@ -200,9 +200,9 @@ static func apply_eigenstate_vector(eigenstate: Variant) -> Dictionary:
 		"spawn_towers": _spawn_despawn_towers(diff),
 		"tower_updates": _update_positions(next_state),
 		"energy_overlay": _update_energy_levels(next_state),
-		"heat_overlay": _update_heat_overlay(next_state),
+		"heat_overlay": _build_heat_overlay_payload(next_state),
 		"mobs": _update_mob_states(next_state),
-		"wave_ui": _update_wave_ui(next_state),
+		"wave_ui": _build_wave_ui_payload(next_state),
 		"diff": diff,
 	}
 
@@ -277,7 +277,7 @@ static func _update_energy_levels(next_state: Dictionary) -> Dictionary:
 		"link_count": (next_state.get("energy_graph", []) as Array).size(),
 	}
 
-static func _update_heat_overlay(next_state: Dictionary) -> Dictionary:
+static func _build_heat_overlay_payload(next_state: Dictionary) -> Dictionary:
 	var heat_map: Array = next_state.get("heat_map", [])
 	var heat_max: float = 0.0
 	for point: Variant in heat_map:
@@ -299,5 +299,5 @@ static func _update_mob_states(next_state: Dictionary) -> Array:
 			})
 	return result
 
-static func _update_wave_ui(next_state: Dictionary) -> Dictionary:
+static func _build_wave_ui_payload(next_state: Dictionary) -> Dictionary:
 	return next_state.get("level_state", {"wave": 0, "time": 0.0, "integrity": 1.0})
