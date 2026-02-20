@@ -3,6 +3,7 @@ extends Control
 
 @onready var version_label: Label = %VersionLabel
 @onready var settings_popup: PopupPanel = %SettingsPopup
+@onready var campaign_version_option: OptionButton = %CampaignVersionOption
 @onready var volume_label: Label = %VolumeLabel
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var game_speed_label: Label = %GameSpeedLabel
@@ -26,7 +27,20 @@ extends Control
 
 func _ready() -> void:
 	version_label.text = "v0.00.6.0 demo campaign"
+	_configure_campaign_versions()
 	_sync_ui_from_settings()
+
+func _configure_campaign_versions() -> void:
+	campaign_version_option.clear()
+	campaign_version_option.add_item("Campaign v0.00.6 (Demo)")
+	campaign_version_option.set_item_metadata(0, "v0.00.6")
+	campaign_version_option.add_item("Campaign v0.8 (CODEX Eigenstate)")
+	campaign_version_option.set_item_metadata(1, "v0.8")
+	var selected_version: String = LevelManager.get_campaign_version()
+	for i: int in range(campaign_version_option.item_count):
+		if str(campaign_version_option.get_item_metadata(i)) == selected_version:
+			campaign_version_option.select(i)
+			break
 
 func _sync_ui_from_settings() -> void:
 	var settings: Dictionary = LevelManager.get_settings()
@@ -74,7 +88,11 @@ func _update_slider_labels() -> void:
 		heat_multiplier_label.text = "Global Heat Multiplier: %.2fx" % heat_multiplier_slider.value
 
 func _on_play_pressed() -> void:
-	LevelManager.show_campaign_select()
+	LevelManager.start_selected_campaign()
+
+func _on_campaign_version_selected(index: int) -> void:
+	var version_id: String = str(campaign_version_option.get_item_metadata(index))
+	LevelManager.set_campaign_version(version_id)
 
 func _on_settings_pressed() -> void:
 	_sync_ui_from_settings()
