@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/campaign/WaveUI.gd" id="1"]
+
+[node name="WaveUI" type="PanelContainer"]
+script = ExtResource("1")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+
+[node name="WaveLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+text = "Wave 1/10"
+
+[node name="EnemiesLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+text = "Enemies: 0"
+
+[node name="CountdownLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+text = "Next in 0.0s"
