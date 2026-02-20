@@ -51,8 +51,18 @@ horizontal_alignment = 1
 [node name="PlayButton" type="Button" parent="Panel"]
 custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-text = "Demo Campaign"
+text = "Play Campaign"
 
+
+[node name="CampaignVersionLabel" type="Label" parent="Panel"]
+layout_mode = 2
+text = "Campaign Version"
+horizontal_alignment = 1
+
+[node name="CampaignVersionOption" type="OptionButton" parent="Panel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
 [node name="SettingsButton" type="Button" parent="Panel"]
 custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
@@ -287,3 +297,4 @@ text = "Close"
 [connection signal="toggled" from="SettingsPopup/PopupMargin/PopupVBox/SettingsScroll/SectionsVBox/AdvancedSection/AdvancedMargin/AdvancedVBox/SimulationModeToggle" to="." method="_on_simulation_mode_toggled"]
 [connection signal="pressed" from="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox/ResetButton" to="." method="_on_reset_button_pressed"]
 [connection signal="pressed" from="SettingsPopup/PopupMargin/PopupVBox/ButtonsHBox/CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="item_selected" from="Panel/CampaignVersionOption" to="." method="_on_campaign_version_selected"]

@@ -2,6 +2,7 @@
 extends Node
 
 const LEVEL_SCENE: String = "res://scenes/level_scene.tscn"
+const CAMPAIGN_ROOT_SCENE: String = "res://scenes/CampaignRoot.tscn"
 const MAIN_MENU_SCENE: String = "res://scenes/MainMenu.tscn"
 const CAMPAIGN_SELECT_SCENE: String = "res://ui/campaign_select.tscn"
 const SETTINGS_FILE: String = "user://burzen_settings.cfg"
@@ -28,6 +29,7 @@ var settings: Dictionary = {}
 var campaign_mode: bool = false
 var current_level_id: String = ""
 var demo_levels: Dictionary = {}
+var selected_campaign_version: String = "v0.00.6"
 
 func _ready() -> void:
 	settings = DEFAULT_SETTINGS.duplicate(true)
@@ -47,6 +49,20 @@ func start_new_run() -> void:
 
 func show_campaign_select() -> void:
 	get_tree().change_scene_to_file(CAMPAIGN_SELECT_SCENE)
+
+func set_campaign_version(version_id: String) -> void:
+	selected_campaign_version = version_id
+
+func get_campaign_version() -> String:
+	return selected_campaign_version
+
+func start_selected_campaign() -> void:
+	if selected_campaign_version == "v0.8":
+		campaign_mode = true
+		current_level_id = "campaign_v0_8"
+		get_tree().change_scene_to_file(CAMPAIGN_ROOT_SCENE)
+		return
+	show_campaign_select()
 
 func start_demo_campaign() -> void:
 	campaign_mode = true
