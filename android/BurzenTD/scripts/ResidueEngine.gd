@@ -27,6 +27,7 @@ const DEFAULT_RESIDUE_BY_TOWER: Dictionary = {
 
 static var _last_eigenstate: Dictionary = {}
 static var _last_version_id: int = -1
+var previous_eigenstate: Dictionary = {}
 
 static func normalize_tower_definition(definition: Dictionary) -> Dictionary:
 	var normalized: Dictionary = definition.duplicate(true)
@@ -73,7 +74,7 @@ static func _sanitize_residue_class(residue_class: StringName) -> StringName:
 		return residue_class
 	return &"special"
 
-func apply_eigenstate_vector(eigen: Dictionary, membrane_nodes: Dictionary = {}) -> Dictionary:
+func apply_eigenstate_to_membrane(eigen: Dictionary, membrane_nodes: Dictionary = {}) -> Dictionary:
 	var delta: Dictionary = _compute_diff(previous_eigenstate, eigen)
 	_update_towers(eigen.get("towers", []), membrane_nodes.get("tower_container", null))
 	_update_mobs(eigen.get("mobs", []), membrane_nodes.get("mob_container", null))
@@ -105,6 +106,12 @@ func _index_by_id(items: Array) -> Dictionary:
 		if item is Dictionary:
 			index[int(item.get("id", -1))] = item
 	return index
+
+func _has_id(items: Array, expected_id: int) -> bool:
+	for item: Variant in items:
+		if item is Dictionary and int(item.get("id", -1)) == expected_id:
+			return true
+	return false
 
 func _update_towers(towers: Array, tower_container: Node) -> void:
 	if tower_container == null:
@@ -199,9 +206,9 @@ static func apply_eigenstate_vector(eigenstate: Variant) -> Dictionary:
 		"spawn_towers": _spawn_despawn_towers(diff),
 		"tower_updates": _update_positions(next_state),
 		"energy_overlay": _update_energy_levels(next_state),
-		"heat_overlay": _update_heat_overlay(next_state),
+		"heat_overlay": _build_heat_overlay_payload(next_state),
 		"mobs": _update_mob_states(next_state),
-		"wave_ui": _update_wave_ui(next_state),
+		"wave_ui": _build_wave_ui_payload(next_state),
 		"diff": diff,
 	}
 
@@ -276,7 +283,7 @@ static func _update_energy_levels(next_state: Dictionary) -> Dictionary:
 		"link_count": (next_state.get("energy_graph", []) as Array).size(),
 	}
 
-static func _update_heat_overlay(next_state: Dictionary) -> Dictionary:
+static func _build_heat_overlay_payload(next_state: Dictionary) -> Dictionary:
 	var heat_map: Array = next_state.get("heat_map", [])
 	var heat_max: float = 0.0
 	for point: Variant in heat_map:
@@ -298,5 +305,5 @@ static func _update_mob_states(next_state: Dictionary) -> Array:
 			})
 	return result
 
-static func _update_wave_ui(next_state: Dictionary) -> Dictionary:
+static func _build_wave_ui_payload(next_state: Dictionary) -> Dictionary:
 	return next_state.get("level_state", {"wave": 0, "time": 0.0, "integrity": 1.0})
