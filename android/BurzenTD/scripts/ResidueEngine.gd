@@ -107,6 +107,12 @@ func _index_by_id(items: Array) -> Dictionary:
 			index[int(item.get("id", -1))] = item
 	return index
 
+func _has_id(items: Array, expected_id: int) -> bool:
+	for item: Variant in items:
+		if item is Dictionary and int(item.get("id", -1)) == expected_id:
+			return true
+	return false
+
 func _update_towers(towers: Array, tower_container: Node) -> void:
 	if tower_container == null:
 		return
