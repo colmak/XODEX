@@ -22,6 +22,7 @@ const CORE_TOWERS: Array[Dictionary] = [
 @onready var wave_ui: WaveUI = %WaveUI
 @onready var level_progress_bar: LevelProgressBar = %LevelProgressBar
 @onready var debug_overlay: EigenstateDebugOverlay = %DebugOverlay
+@onready var audio_controller: AudioController = %AudioController
 
 var _last_version_id: int = -1
 var _checksum_valid: bool = true
@@ -95,6 +96,8 @@ func process_codex_frame(frame: String) -> void:
 		"status": "VALID",
 	})
 	_refresh_debug(eigen)
+	if audio_controller != null:
+		audio_controller.apply_eigenstate_projection(eigen)
 
 func _on_eigenstate_applied(update: Dictionary) -> void:
 	if debug_overlay != null:

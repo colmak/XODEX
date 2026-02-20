@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/campaign/CampaignRoot.gd" id="1_campaign"]
 [ext_resource type="PackedScene" path="res://ui/campaign/LoadoutPanel.tscn" id="2_loadout"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://ui/campaign/WaveUI.tscn" id="4_wave"]
 [ext_resource type="PackedScene" path="res://ui/campaign/LevelProgressBar.tscn" id="5_progress"]
 [ext_resource type="PackedScene" path="res://ui/campaign/debug/EigenstateDebugOverlay.tscn" id="6_debug_overlay"]
+[ext_resource type="Script" path="res://scripts/campaign/AudioController.gd" id="7_audio_controller"]
 
 [node name="CampaignRoot" type="Node2D"]
 script = ExtResource("1_campaign")
@@ -21,6 +22,10 @@ unique_name_in_owner = true
 [node name="EnergyHeatOverlay" type="Node2D" parent="."]
 unique_name_in_owner = true
 script = ExtResource("3_overlay")
+
+[node name="AudioController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_audio_controller")
 
 [node name="UIRoot" type="CanvasLayer" parent="."]
 
