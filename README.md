@@ -169,6 +169,7 @@ Token format:
 
 Prerequisites:
 1. Godot 4 with Android export templates
+   - Debian/Ubuntu helper: `./scripts/install_binaries.sh`
 2. Android signing/export settings in `android/BurzenTD/export_presets.cfg`
 
 ### Run full local validation gate

@@ -80,7 +80,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 
 if ! command -v godot4 >/dev/null 2>&1 && ! command -v godot >/dev/null 2>&1; then
-  echo "Error: Godot executable not found. Install Godot 4 and retry." >&2
+  echo "Error: Godot executable not found. Run ./scripts/install_binaries.sh or install Godot 4 manually, then retry." >&2
   exit 1
 fi
 
