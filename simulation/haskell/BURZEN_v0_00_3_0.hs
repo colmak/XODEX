@@ -203,8 +203,8 @@ decayCooldowns gs = gs {towers = map cool (towers gs)}
     cool t = t {cooldownRemaining = max 0 (cooldownRemaining t - 1), heat = max 0 (heat t - 4)}
 
 applyPlan :: Plan -> GameState -> GameState
-applyPlan plan =
-  foldl' (flip applyCommand) . appendLogs (wasmTrace plan)
+applyPlan plan gs =
+  foldl' (flip applyCommand) (appendLogs (wasmTrace plan) gs) (commands plan)
 
 appendLogs :: [String] -> GameState -> GameState
 appendLogs logs gs = gs {eventLog = eventLog gs ++ logs}
