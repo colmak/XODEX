@@ -11,6 +11,7 @@ const THERMAL_DEFAULT := {
 	"heat_per_shot": 18.0,
 	"dissipation_rate": 14.0,
 	"recovery_ratio": 0.45,
+	"fire_interval": 0.35,
 }
 
 var towers: Array = []
@@ -92,6 +93,7 @@ func _flow_bias(pos: Vector2, delta: float) -> float:
 func _update_towers(delta: float) -> void:
 	for t in towers:
 		var thermal = t["thermal"]
+		thermal["shot_cooldown"] = max(0.0, thermal["shot_cooldown"] - delta)
 		thermal["heat"] = max(0.0, thermal["heat"] - thermal["dissipation_rate"] * delta)
 		if thermal["overheated"] and thermal["heat"] <= thermal["capacity"] * thermal["recovery_ratio"]:
 			thermal["overheated"] = false
@@ -99,8 +101,12 @@ func _update_towers(delta: float) -> void:
 		if thermal["overheated"]:
 			continue
 
-		if _tower_has_target(t):
+		if not _tower_has_target(t):
+			continue
+
+		while thermal["shot_cooldown"] <= 0.0 and not thermal["overheated"]:
 			thermal["heat"] += thermal["heat_per_shot"]
+			thermal["shot_cooldown"] += thermal["fire_interval"]
 			if thermal["heat"] >= thermal["capacity"]:
 				thermal["overheated"] = true
 
@@ -119,6 +125,7 @@ func _place_tower(pos: Vector2) -> void:
 	var thermal := THERMAL_DEFAULT.duplicate(true)
 	thermal["heat"] = 0.0
 	thermal["overheated"] = false
+	thermal["shot_cooldown"] = 0.0
 	towers.append({
 		"pos": pos,
 		"radius": 180.0,
